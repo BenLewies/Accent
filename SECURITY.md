@@ -16,3 +16,11 @@ passwords, full memory dumps, or private clipboard contents.
 
 Review installation scripts before running them. Privilege is requested during manual
 installation for device rules and group membership, never from a plugin click.
+
+## Inherited lru advisory
+
+The local `vendor/lru` patch backports upstream PR #224 for RUSTSEC-2026-0002
+(GHSA-rhfx-m35p-ff5j) to lru 0.12.5. See its ACCENT_PATCH.md for exact provenance.
+Version-only scanners may still flag 0.12.5; inspect Cargo.lock and the path patch
+rather than treating that registry version as patched. The registry release remains
+vulnerable. Remove the backport when the rendering dependency can use lru >= 0.16.3.

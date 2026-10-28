@@ -19,6 +19,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 
 [[package]]
+name = "accent"
+version = "1.4.0"
+dependencies = [
+ "ashpd",
+ "cocoa 0.26.1",
+ "core-foundation 0.10.1",
+ "core-graphics 0.24.0",
+ "dirs 6.0.0",
+ "enigo",
+ "env_logger",
+ "evdev",
+ "iced",
+ "log",
+ "notify",
+ "objc",
+ "rdev",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "unicode_names2",
+ "x11rb",
+ "xkbcommon",
+ "zbus 5.19.0",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2254,8 +2281,6 @@ checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 [[package]]
 name = "lru"
 version = "0.12.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
 
 [[package]]
 name = "malloc_buf"
@@ -3118,33 +3143,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdcc8dd4e2f670d309a5f0e83fe36dfdc05af317008fea29144da1a2ac858e5e"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "accent"
-version = "1.4.0"
-dependencies = [
- "ashpd",
- "cocoa 0.26.1",
- "core-foundation 0.10.1",
- "core-graphics 0.24.0",
- "dirs 6.0.0",
- "enigo",
- "env_logger",
- "evdev",
- "iced",
- "log",
- "notify",
- "objc",
- "rdev",
- "serde",
- "serde_json",
- "tokio",
- "toml",
- "unicode_names2",
- "x11rb",
- "xkbcommon",
- "zbus 5.19.0",
 ]
 
 [[package]]

@@ -67,5 +67,8 @@ jobs:
       - name: Test
         run: cargo test --all-targets --locked
 
+      - name: Test dependency backport
+        run: cargo test --manifest-path vendor/lru/Cargo.toml --lib --locked
+
       - name: Build release
         run: cargo build --release --locked

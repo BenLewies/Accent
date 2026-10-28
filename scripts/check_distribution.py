@@ -14,7 +14,7 @@ license_text = (root / 'LICENSE').read_text()
 assert 'Copyright (c) 2026 Victor Masson' in license_text
 assert 'Permission is hereby granted, free of charge' in license_text
 notices = (root / 'THIRD_PARTY_NOTICES.md').read_text()
-for owner in ('Microsoft Corporation', 'Unicode', 'Nicolas Patry'):
+for owner in ('Microsoft Corporation', 'Unicode', 'Nicolas Patry', 'Jerome Froelich'):
     assert owner in notices, f'Missing attribution: {owner}'
 workflow = (root / '.github/workflows/release.yml').read_text()
 assert 'cp LICENSE NOTICE.md THIRD_PARTY_NOTICES.md "$STAGE/"' in workflow

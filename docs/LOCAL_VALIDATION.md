@@ -1,6 +1,7 @@
 # Local validation — 2026-10-28
 
 - Rust: 127 passed, 4 ignored, 0 failed on Linux x86_64.
+- Vendored lru backport: 45 unit tests passed, including forward/reverse iteration.
 - Python bar controller: 4 passed, including action rejection and missing-service state.
 - Omarchy root plugin-manifest validation: passed.
 - Distribution structure/attribution and shell syntax checks: passed.
@@ -30,3 +31,10 @@ Repository visibility is still private. No marketplace submission has been sent.
 Fresh public validation, owner approval of the submission checklist, a reviewed
 binary release and green cross-platform CI remain publication gates. macOS was not
 run locally. Adoption and marketplace acceptance cannot be guaranteed.
+
+## Inherited dependency advisory
+
+GitHub reported GHSA-rhfx-m35p-ff5j in registry lru 0.12.5. Accent now selects a
+local licensed backport of upstream PR #224 through Cargo’s path patch. Both iterator
+directions use the corrected shared-key pointer. The original registry version
+is not claimed to be fixed; scanners should inspect the documented path patch.

@@ -49,3 +49,6 @@ x11rb = { version = "0.13", features = ["randr"] }
 # clones are never re-grabbed, and odd device nodes can't kill the grab loop.
 [patch.crates-io]
 rdev = { path = "vendor/rdev" }
+
+# Backport upstream fix for RUSTSEC-2026-0002 without changing iced 0.13 APIs.
+lru = { path = "vendor/lru" }
