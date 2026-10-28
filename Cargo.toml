@@ -1,14 +1,14 @@
 [package]
-name = "quickaccent"
+name = "accent"
 version = "1.3.0"
 edition = "2021"
 description = "Cross-platform accent character picker inspired by PowerToys PowerAccent"
 license = "MIT"
-repository = "https://github.com/victormasson/QuickAccent"
+repository = "https://github.com/BenLewies/Accent"
 readme = "README.md"
 
 [[bin]]
-name = "quickaccent"
+name = "accent"
 path = "src/main.rs"
 
 [dependencies]

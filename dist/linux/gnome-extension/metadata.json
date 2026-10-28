@@ -1,7 +1,7 @@
 {
-  "uuid": "quickaccent-focus@victormasson.github.io",
-  "name": "QuickAccent",
-  "description": "QuickAccent top-bar menu (Settings… / Quit) and focused-window geometry so the accent picker opens on the monitor you are typing on. Installed automatically by QuickAccent.",
+  "uuid": "accent-focus@victormasson.github.io",
+  "name": "Accent",
+  "description": "Accent top-bar menu (Settings… / Quit) and focused-window geometry so the accent picker opens on the monitor you are typing on. Installed automatically by Accent.",
   "shell-version": ["48", "49", "50", "51"],
-  "url": "https://github.com/victormasson/QuickAccent"
+  "url": "https://github.com/BenLewies/Accent"
 }

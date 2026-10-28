@@ -47,11 +47,11 @@ pub fn focused_window_placement() -> Option<Placement> {
         let x11 = x11_monitors();
         match place(rect, &logical, &x11) {
             Some(p) => {
-                log::debug!("[QuickAccent] overlay anchor {rect:?} -> x11 {p:?}");
+                log::debug!("[Accent] overlay anchor {rect:?} -> x11 {p:?}");
                 return Some(p);
             }
             None => log::warn!(
-                "[QuickAccent] could not map {rect:?} onto the XWayland layout \
+                "[Accent] could not map {rect:?} onto the XWayland layout \
                  (hyprland: {logical:?}, x11: {x11:?}); using logical coordinates"
             ),
         }
@@ -158,7 +158,7 @@ pub fn x11_monitors() -> Vec<Monitor> {
         Ok(monitors)
     }
     query().unwrap_or_else(|e| {
-        log::warn!("[QuickAccent] RandR monitor query failed: {e}");
+        log::warn!("[Accent] RandR monitor query failed: {e}");
         Vec::new()
     })
 }

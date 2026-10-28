@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Install QuickAccent.app from GitHub Releases (universal binary).
+# Install Accent.app from GitHub Releases (universal binary).
 set -euo pipefail
 
-REPO="${GITHUB_REPO:-victormasson/QuickAccent}"
-ASSET="QuickAccent-macos-universal.tar.gz"
+REPO="${GITHUB_REPO:-BenLewies/Accent}"
+ASSET="Accent-macos-universal.tar.gz"
 SUMS="SHA256SUMS"
 APP_DIR="${PREFIX:-$HOME/Applications}"
 # Run from a checkout (./dist/macos/install.sh). Without a source tree the
@@ -16,8 +16,8 @@ fi
 
 # Release to install. Default: the version of the checkout you run this from;
 # `latest` = newest stable, `continuous` = rolling build, or a tag such as v1.2.0.
-if [[ -n "${QUICKACCENT_VERSION:-}" ]]; then
-  RELEASE_TAG="$QUICKACCENT_VERSION"
+if [[ -n "${ACCENT_VERSION:-}" ]]; then
+  RELEASE_TAG="$ACCENT_VERSION"
 elif [[ -n "$ROOT" && -f "$ROOT/Cargo.toml" ]]; then
   RELEASE_TAG="v$(sed -n 's/^version = "\(.*\)"/\1/p' "$ROOT/Cargo.toml" | head -1)"
 else
@@ -42,16 +42,16 @@ release_url() {
 }
 
 # The archive is only extracted after its sha256 matches the SHA256SUMS file
-# published with the release. QUICKACCENT_SKIP_VERIFY=1 bypasses this for
+# published with the release. ACCENT_SKIP_VERIFY=1 bypasses this for
 # releases older than v1.2.0, which shipped no checksum file.
 verify_release() {
-  if [[ "${QUICKACCENT_SKIP_VERIFY:-0}" == "1" ]]; then
-    echo "warning: QUICKACCENT_SKIP_VERIFY=1, checksum not verified" >&2
+  if [[ "${ACCENT_SKIP_VERIFY:-0}" == "1" ]]; then
+    echo "warning: ACCENT_SKIP_VERIFY=1, checksum not verified" >&2
     return 0
   fi
   if ! curl -fsSL "$(release_url "$SUMS")" -o "$tmpdir/$SUMS"; then
     echo "error: $SUMS not found for $RELEASE_TAG; refusing to install an unverified asset." >&2
-    echo "       (QUICKACCENT_SKIP_VERIFY=1 to override for pre-1.2.0 releases)" >&2
+    echo "       (ACCENT_SKIP_VERIFY=1 to override for pre-1.2.0 releases)" >&2
     exit 1
   fi
   echo "==> Verify sha256"
@@ -83,12 +83,12 @@ build_from_source() {
   fi
   command -v cargo >/dev/null || { echo "error: install Rust (https://rustup.rs/)" >&2; exit 1; }
   (cd "$ROOT" && cargo build --release)
-  APP="$tmpdir/QuickAccent.app"
+  APP="$tmpdir/Accent.app"
   mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-  cp "$ROOT/target/release/quickaccent" "$APP/Contents/MacOS/quickaccent"
-  chmod +x "$APP/Contents/MacOS/quickaccent"
-  if [[ -f "$ROOT/dist/macos/QuickAccent.app/Contents/Info.plist" ]]; then
-    cp "$ROOT/dist/macos/QuickAccent.app/Contents/Info.plist" "$APP/Contents/Info.plist"
+  cp "$ROOT/target/release/accent" "$APP/Contents/MacOS/accent"
+  chmod +x "$APP/Contents/MacOS/accent"
+  if [[ -f "$ROOT/dist/macos/Accent.app/Contents/Info.plist" ]]; then
+    cp "$ROOT/dist/macos/Accent.app/Contents/Info.plist" "$APP/Contents/Info.plist"
   fi
   if [[ -f "$ROOT/dist/macos/AppIcon.icns" ]]; then
     cp "$ROOT/dist/macos/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
@@ -97,39 +97,39 @@ build_from_source() {
 
 if [[ "${INSTALL_FROM_SOURCE:-0}" == "1" ]]; then
   build_from_source
-  APP_SRC="$tmpdir/QuickAccent.app"
+  APP_SRC="$tmpdir/Accent.app"
 else
   if fetch_release; then
     tar -xzf "$tmpdir/$ASSET" -C "$tmpdir"
-    APP_SRC="$(find "$tmpdir" -maxdepth 2 -type d -name 'QuickAccent.app' | head -1)"
-    [[ -n "$APP_SRC" ]] || { echo "error: QuickAccent.app missing from archive" >&2; exit 1; }
+    APP_SRC="$(find "$tmpdir" -maxdepth 2 -type d -name 'Accent.app' | head -1)"
+    [[ -n "$APP_SRC" ]] || { echo "error: Accent.app missing from archive" >&2; exit 1; }
   else
     echo "warning: download failed; falling back to source build" >&2
     build_from_source
-    APP_SRC="$tmpdir/QuickAccent.app"
+    APP_SRC="$tmpdir/Accent.app"
   fi
 fi
 
 echo "==> Install to $APP_DIR"
 mkdir -p "$APP_DIR"
-rm -rf "$APP_DIR/QuickAccent.app"
-cp -R "$APP_SRC" "$APP_DIR/QuickAccent.app"
+rm -rf "$APP_DIR/Accent.app"
+cp -R "$APP_SRC" "$APP_DIR/Accent.app"
 
 # TCC binds the Accessibility grant to the bundle's code signature. An
 # unsigned bundle (older releases, source builds) has no stable requirement,
 # so the toggle silently never applies. Ad-hoc sign unless already valid.
-if ! codesign --verify --strict "$APP_DIR/QuickAccent.app" 2>/dev/null; then
-  echo "==> Ad-hoc sign $APP_DIR/QuickAccent.app"
-  codesign --force --sign - "$APP_DIR/QuickAccent.app"
+if ! codesign --verify --strict "$APP_DIR/Accent.app" 2>/dev/null; then
+  echo "==> Ad-hoc sign $APP_DIR/Accent.app"
+  codesign --force --sign - "$APP_DIR/Accent.app"
 fi
 
 echo
-echo "Installed $APP_DIR/QuickAccent.app"
+echo "Installed $APP_DIR/Accent.app"
 echo "  • Grant Accessibility: System Settings → Privacy & Security → Accessibility"
-echo "    (if a stale QuickAccent entry is listed, remove it and add this one)"
-echo "  • Launch: open \"$APP_DIR/QuickAccent.app\""
+echo "    (if a stale Accent entry is listed, remove it and add this one)"
+echo "  • Launch: open \"$APP_DIR/Accent.app\""
 echo "    Always start it through Launch Services (open / Finder / a LaunchAgent"
-echo "    running open); exec'ing Contents/MacOS/quickaccent directly makes TCC"
+echo "    running open); exec'ing Contents/MacOS/accent directly makes TCC"
 echo "    ignore the Accessibility grant."
 echo "  • Start at login: see dist/macos/README.md"
-echo "  • Or brew from source: brew install --HEAD ./dist/brew/Formula/quickaccent.rb"
+echo "  • Or brew from source: brew install --HEAD ./dist/brew/Formula/accent.rb"

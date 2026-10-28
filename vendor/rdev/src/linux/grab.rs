@@ -309,7 +309,7 @@ where
     grab_with_is_repeat(move |event, _is_repeat| callback(event))
 }
 
-// QuickAccent patch: like `grab`, but tells the callback whether the key
+// Accent patch: like `grab`, but tells the callback whether the key
 // event is a kernel autorepeat (EV_KEY value 2). Stock rdev collapses
 // repeats into KeyPress, making them indistinguishable from real presses.
 pub fn grab_with_is_repeat<T>(callback: T) -> Result<(), GrabError>
@@ -373,7 +373,7 @@ where
 {
     let mut timeout_ms = -1;
     let (epoll_fd, mut devices, output_devices, mut inodes) = setup_devices()?;
-    // QuickAccent patch: a clone is dropped (destroying its uinput device)
+    // Accent patch: a clone is dropped (destroying its uinput device)
     // when the keyboard it mirrors goes away, so reconnects leave no ghosts.
     let mut output_devices: Vec<Option<UInputDevice>> =
         output_devices.into_iter().map(Some).collect();
@@ -391,7 +391,7 @@ where
     let mut epoll_buffer = [epoll::Event::new(epoll::Events::empty(), 0); 4];
     let mut inotify_buffer = vec![0_u8; 4096];
     'event_loop: loop {
-        // QuickAccent patch: epoll_wait is interrupted (EINTR) by signals and
+        // Accent patch: epoll_wait is interrupted (EINTR) by signals and
         // suspend/resume; propagating that killed the whole grab loop while
         // the daemon kept running deaf.
         let num_events = match epoll::wait(epoll_fd, timeout_ms, &mut epoll_buffer) {
@@ -405,7 +405,7 @@ where
             // new device file created
             if event.data == INOTIFY_DATA {
                 for event in inotify.read_events(&mut inotify_buffer)? {
-                    // QuickAccent patch: non-fatal + grabs hot-plugged devices
+                    // Accent patch: non-fatal + grabs hot-plugged devices
                     add_device_to_epoll_from_inotify_event(
                         epoll_fd,
                         event,
@@ -423,7 +423,7 @@ where
                     //TODO: deal with EV_SYN::SYN_DROPPED
                     let (_, event) = match device.next_event(evdev_rs::ReadFlag::NORMAL) {
                         Ok(event) => event,
-                        // QuickAccent patch: EINTR/EAGAIN are transient — do
+                        // Accent patch: EINTR/EAGAIN are transient — do
                         // not de-register a healthy keyboard over them.
                         Err(e) if e.raw_os_error() == Some(libc::EINTR)
                             || e.raw_os_error() == Some(libc::EAGAIN) =>
@@ -515,13 +515,13 @@ where
         {
             continue;
         }
-        // QuickAccent patch: never grab the application's own virtual device.
+        // Accent patch: never grab the application's own virtual device.
         if let Some(name) = path.file_name() {
             if is_skipped_device(name) {
                 continue;
             }
         }
-        // QuickAccent patch: skip nodes we can't open instead of failing the
+        // Accent patch: skip nodes we can't open instead of failing the
         // whole grab (e.g. a freshly created uinput node udev hasn't
         // relabeled yet).
         match File::open(&path) {
@@ -534,7 +534,7 @@ where
 
 fn inotify_devices() -> io::Result<Inotify> {
     let mut inotify = Inotify::init()?;
-    // QuickAccent patch: devtmpfs creates a node root:root 0600 and udev only
+    // Accent patch: devtmpfs creates a node root:root 0600 and udev only
     // then hands it to group `input` — opening on CREATE alone loses that
     // race and the reconnected keyboard was never grabbed. ATTRIB fires on
     // udev's chown/chmod, so a node that wasn't openable yet is retried.
@@ -542,7 +542,7 @@ fn inotify_devices() -> io::Result<Inotify> {
     Ok(inotify)
 }
 
-// QuickAccent patch: let the embedding application exclude its own virtual
+// Accent patch: let the embedding application exclude its own virtual
 // input device from grabbing (by device name). Events it injects then go
 // straight to the compositor instead of looping back through the grab.
 static SKIP_DEVICE_NAME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
@@ -566,7 +566,7 @@ fn is_skipped_device(node: &OsStr) -> bool {
     }
 }
 
-// QuickAccent patch: hot-plugged devices are grabbed and cloned exactly like
+// Accent patch: hot-plugged devices are grabbed and cloned exactly like
 // the ones present at startup, so a keyboard connected mid-session (USB
 // replug, Bluetooth reconnect) is suppressible too. Virtual (uinput-created)
 // devices are skipped: grabbing our own uinput clones would clone them again,
@@ -647,7 +647,7 @@ fn is_uinput_device(name: &OsStr) -> bool {
         .unwrap_or(false)
 }
 
-// QuickAccent patch: only grab keyboards.
+// Accent patch: only grab keyboards.
 //
 // Stock rdev grabs (and clones through uinput) every node under /dev/input:
 // mice, touchpads, jack-detection switches, power/sleep buttons, vendor
@@ -657,7 +657,7 @@ fn is_uinput_device(name: &OsStr) -> bool {
 // and any edge lost across a restart leaves it stuck. On GNOME that showed
 // up as mutter refusing to light the laptop panel ("Refusing to activate a
 // closed laptop panel") or never turning it off when the lid was closed.
-// QuickAccent only ever needs letter keys, so require a real alphabetic
+// Accent only ever needs letter keys, so require a real alphabetic
 // keyboard and refuse anything that carries switches.
 fn is_keyboard_device(device: &Device) -> bool {
     device.has_event_type(&evdev_rs::enums::EventType::EV_KEY)
@@ -672,7 +672,7 @@ fn is_keyboard_device(device: &Device) -> bool {
 /// on any available data in the original devices.
 fn setup_devices() -> io::Result<(RawFd, Vec<Device>, Vec<UInputDevice>, Vec<u64>)> {
     let device_files = get_device_files(DEV_PATH)?;
-    // QuickAccent patch: build the libevdev handle first so non-keyboards can
+    // Accent patch: build the libevdev handle first so non-keyboards can
     // be dropped (closing their fd) before anything is grabbed or watched.
     let mut fds = Vec::new();
     let mut devices = Vec::new();

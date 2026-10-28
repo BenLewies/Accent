@@ -1,290 +1,37 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/icon.svg">
-    <img src="assets/icon-dark.svg" width="96" height="96" alt="QuickAccent">
-  </picture>
-</p>
+# Accent
 
-# QuickAccent
+A personal accent picker for Linux and macOS, derived from
+[QuickAccent by Victor Masson](https://github.com/victormasson/QuickAccent).
+The original Git history, MIT license, and third-party notices are preserved.
 
-Cross-platform accent picker for Linux and macOS, inspired by [PowerAccent](https://learn.microsoft.com/en-us/windows/powertoys/quick-accent) (PowerToys).
+Hold a letter, choose an accent with Space/arrows, then release to insert.
+On Linux, select **Long press, Space and arrows** in Settings to open the
+picker automatically after the configured hold delay. Escape cancels.
 
-Hold a letter → Space → pick an accent → release to insert.
+## Desktop integration
 
-## How it works
+On Omarchy, Accent's picker and settings follow the active desktop palette,
+including changes while windows are open. The **Á** bar widget opens settings
+on click. Right-click for pause/start, restart, and automatic startup controls.
+The plugin source is in `dist/omarchy`.
 
-1. Hold a letter (e.g. `e`) — like on macOS, the letter is held back, nothing
-   is typed yet
-2. Press `Space` — overlay shows variants (`é è ê ë`…)
-3. `Space` / arrows cycle; release the letter to insert the accent directly
-4. `Escape` cancels and types the plain letter
+The executable is `accent`, the user service is `accent.service`, and
+configuration lives at `~/.config/accent/config.toml`. Use `accent --settings`
+to open settings, or `systemctl --user restart accent` to restart the service.
 
-Just tapping a letter types it normally (it appears on key release); accented
-letters don't auto-repeat while held, exactly like macOS press-and-hold.
+## Build
 
-## Omarchy desktop appearance
+Build the personal source rather than installing upstream QuickAccent binaries:
 
-On Hyprland with Omarchy, the picker and settings window automatically follow
-`$XDG_STATE_HOME/omarchy/current/theme/colors.toml` (normally
-`~/.local/state/omarchy/current/theme/colors.toml`). Background, text, accent,
-selection and status colors refresh within half a second of a theme change,
-including while a window is open. The last valid palette is retained during
-file replacement. Other desktops keep the existing appearance controls.
-
-## Long-press activation (Linux)
-
-In Settings → Behaviour → Activation key, select **Long press** to open the
-picker just by holding a letter, or **Long press, Space and arrows** to keep
-both activation methods. Adjust **Hold delay** to control the wait (250 ms by
-default). Space/arrows select a variant, releasing the letter inserts it, and
-Escape cancels. Short taps still type normally. Keyboard repeat is not required.
-
-The equivalent configuration is `activation_key = "LongPress"` or
-`activation_key = "BothLongPress"` in `~/.config/quickaccent/config.toml`.
-Existing configurations keep their current activation method. These additional
-modes are currently available on Linux only.
-
-## Install
-
-Prebuilt binaries, no Rust needed: the stable
-[latest release](https://github.com/victormasson/QuickAccent/releases/latest),
-plus a rolling [`continuous`](https://github.com/victormasson/QuickAccent/releases/tag/continuous)
-prerelease rebuilt on every `master` push.
-
-### Linux (Wayland or X11; GNOME and Hyprland/Omarchy) — prebuilt, no Rust
-
-Every release ships `quickaccent-linux-x86_64.tar.gz`, a `SHA256SUMS` file and
-a Sigstore build-provenance attestation, so the binary you install can be
-checked against what CI built from the tagged commit:
-
-```bash
-gh attestation verify quickaccent-linux-x86_64.tar.gz --repo victormasson/QuickAccent
-```
-
-**Arch / Omarchy** — AUR package [`quickaccent-bin`](dist/arch/) (tarball
-pinned by sha256 in the PKGBUILD):
-
-```bash
-yay -S quickaccent-bin           # or: omarchy pkg add quickaccent-bin
-sudo usermod -aG input "$USER"   # then reboot once
-systemctl --user enable --now quickaccent
-```
-
-**Fedora, Debian, others** — clone the release tag and run the installer. It
-downloads the tarball for that same tag, verifies it against `SHA256SUMS`
-(and the attestation when `gh` is logged in), and refuses to continue on a
-mismatch:
-
-```bash
-git clone --branch v1.3.0 --depth 1 https://github.com/victormasson/QuickAccent
-QuickAccent/dist/linux/install.sh
-sudo reboot
-```
-
-The installer sets up:
-
-- `~/.local/bin/quickaccent` + a systemd user unit (starts with your session)
-- udev rule for `/dev/input` + `/dev/uinput`, loads the `uinput` module at boot
-- adds you to group `input`
-
-The **reboot** is required once so `systemd --user` picks up the new group
-(a GNOME logout is not enough).
-
-That's it — no permission prompt, no clipboard tricks. Accents are typed as
-real keystrokes in every app (terminals included): characters your keyboard
-layout lacks (é on US, É on AZERTY…) are added to the keymap automatically at
-startup (xkb option `quickaccent:accents` in `~/.config/xkb`, your other xkb
-options are preserved).
-
-Notes:
-
-- `input` group members can read all keyboards — trusted users only.
-- Optional: `wl-clipboard` enables the emergency paste fallback on non-GNOME
-  desktops.
-- Uninstall / undo the keymap extension: remove `quickaccent:accents` from
-  `gsettings get org.gnome.desktop.input-sources xkb-options`, delete
-  `~/.config/xkb/symbols/quickaccent`, and `systemctl --user disable --now quickaccent`
-  (Arch: `sudo pacman -Rns quickaccent-bin`).
-
-Details: [dist/linux/README.md](dist/linux/README.md).
-
-#### Omarchy / Hyprland
-
-Install the AUR package as above. QuickAccent enables its keymap option with
-`hyprctl keyword input:kb_options` (applied instantly, `hyprland.conf` is not
-touched) and follows the focused window with `hyprctl activewindow`, so the
-picker opens on the monitor you are typing on. There is an optional bar widget
-for the Omarchy shell in [dist/omarchy/](dist/omarchy/).
-
-### macOS (universal, no Rust)
-
-```bash
-git clone --branch v1.3.0 --depth 1 https://github.com/victormasson/QuickAccent
-QuickAccent/dist/macos/install.sh    # verifies the asset against SHA256SUMS
-open ~/Applications/QuickAccent.app
-```
-
-Grant **Accessibility** (System Settings → Privacy & Security).  
-The menu-bar icon has *Settings…* (⌘,) to pick languages and symbol sets; the
-picker draws on Liquid Glass (macOS 26+; a blur on older releases).  
-Details: [dist/macos/README.md](dist/macos/README.md).
-
-Homebrew (builds from source):
-
-```bash
-brew install --HEAD ./dist/brew/Formula/quickaccent.rb
-```
-
-### From source
-
-Only if you cannot use the prebuilt (other CPU, or the release is missing):
-
-```bash
-# Fedora
-sudo dnf install -y gcc pkgconf-pkg-config libxkbcommon-devel libxkbcommon-x11-devel \
-  libevdev-devel wayland-devel fontconfig-devel alsa-lib-devel \
-  libX11-devel libXi-devel libXtst-devel libXcursor-devel libXrandr-devel \
-  libXinerama-devel mesa-libEGL-devel mesa-libGL-devel vulkan-loader-devel wl-clipboard
-
+```sh
+cargo test --all-targets --locked
+cargo build --release --locked
 INSTALL_FROM_SOURCE=1 ./dist/linux/install.sh
-# or: cargo build --release   → target/release/quickaccent
 ```
 
-## Config
+The source installer requires the standard Rust/Linux build dependencies and
+keyboard/uinput permissions. It installs the user service and desktop launcher.
+For systems with GPU device-loss errors, set `ICED_BACKEND=tiny-skia` in the
+Accent service environment to use its built-in software renderer.
 
-`~/.config/quickaccent/config.toml` is created on first run. Languages, timing,
-and activation-key changes reload automatically; appearance, pagination and
-character descriptions are refreshed when a window opens:
-
-```toml
-languages = ["French", "German", "Spanish"]
-# hold_delay_ms = 250
-# items_per_page = 0
-# show_unicode_description = true
-# input_time_ms = 200
-# activation_key = "Both"   # Space | LeftRightArrow | Both
-# theme = "system"   # system | light | dark | dracula
-                     # catppuccin-latte | catppuccin-frappe | catppuccin-macchiato | catppuccin-mocha
-                     # rose-pine | rose-pine-moon | rose-pine-dawn
-# theme_light = "light"   # palettes used while theme = "system",
-# theme_dark = "dark"     # on a light / dark desktop (any value above but system)
-# overlay_opacity = 0.88
-# overlay_radius = 16
-# chip_radius = 8
-```
-
-The *Settings…* window edits every key above for you (only those lines are
-rewritten; comments and other keys are kept). Open it from the menu-bar menu (macOS), the top-bar
-*QuickAccent* menu (GNOME), or on any Linux desktop by launching QuickAccent
-again while it runs (the launcher entry, its *Settings* desktop action, or
-`quickaccent --settings`), or by right-clicking the picker.
-
-**Languages:** Catalan, CrimeanTatar, Croatian, Czech, Danish, Dutch, Esperanto, Estonian, Finnish, French, German, Greek, Hungarian, IPA, Iceland, Irish, Italian, Kurdish, Lithuanian, Maltese, Maori, Norwegian, Pinyin, Polish, Portuguese, ProtoIndoEuropean, Romanian, Romanization, ScottishGaelic, Serbian, Slovak, Slovenian, Spanish, Swedish, Turkish, Vietnamese, Welsh
-
-**Additional sets:** `Special` (PowerToys symbols, punctuation, fractions and
-superscripts) and `Currency`.
-Optional extensions: `Typography`, `Arrows`, `Math`, and `CurrencyExtended`.
-Add these names to `languages` to enable them. Hold a punctuation or number key
-and trigger the picker just as you would for a letter. See
-[character bindings](docs/CHARACTERS.md) for configuration and symbol keys.
-
-`Hebrew` and `Yiddish` are also available as optional language sets, using
-phonetic Latin keys. See [their bindings](docs/CHARACTERS.md#phonetic-hebrew-and-yiddish)
-for letters, final forms, vowel marks, and Yiddish combinations.
-
-`Cherokee`, `Osage`, `CanadianAboriginalSyllabics`,
-`CanadianAboriginalSyllabicsExtended`, and `CanadianAboriginalSyllabicsExtendedA`
-provide complete Unicode 17.0 repertoires through Latin-key lookup. See
-[script bindings and casing](docs/CHARACTERS.md#cherokee-osage-and-canadian-syllabics).
-
-## Usage
-
-### Character descriptions
-
-Descriptions are on by default. Untick *Show Unicode name below the picker* in
-Settings (or set `show_unicode_description = false`) to hide the footer and
-remove its extra space. Set it back to `true` to enable it again.
-
-Below the choices, the picker shows the selected character's Unicode code point
-and official Unicode 17.0 name, for example `(U+0163) LATIN SMALL LETTER T WITH
-CEDILLA`. The description follows selection and Shift/case changes. Choices
-containing multiple characters list each code point and name in order, including
-combining marks; display-only dotted circles are not included.
-
-Long descriptions wrap, with space reserved for every choice so cycling between
-characters or pages does not resize the picker. Names are shown in English as
-published by Unicode.
-
-### Picker pages
-
-`items_per_page = 0` is the default: show all choices without pagination or a
-counter. To enable pages, move *Items per page* in Settings, or set a positive
-integer such as `items_per_page = 12` in `~/.config/quickaccent/config.toml`.
-
-Space or Right Arrow advances, Left Arrow goes back, and the display changes
-pages automatically. The counter shows the selected position and total (e.g.
-`1/113`), not a page number, and only appears when multiple pages exist.
-Cycling wraps at either end; releasing the original key inserts the selected
-character, and Escape cancels as usual. The widest page determines window
-width, so cycling does not resize it. Showing all choices (`items_per_page = 0`)
-can make long pickers wider than the screen.
-
-### Grid view
-
-Press Down Arrow in the picker to see every choice for the letter at once, in a
-grid with `items_per_page` columns (a roughly square grid when it is `0`).
-Space moves cell by cell from the top left to the bottom right, the arrow keys
-move left, right, up and down, and every direction wraps. Release the letter to
-insert the selected character, or press Escape to cancel. The next picker opens
-as a row again.
-
-```bash
-quickaccent
-RUST_LOG=debug quickaccent
-journalctl --user -u quickaccent -f
-QUICKACCENT_DEMO=overlay quickaccent   # or =grid / =settings: open that window at
-                                        # startup, no keyboard grab (UI work)
-```
-
-Runs as a background daemon. On Linux the overlay renders through XWayland so
-it never steals keyboard focus, and on GNOME it opens centered on the window
-you are typing in (right monitor on multi-head setups) via a self-installed
-micro shell extension — log out/in once after install to activate it;
-without it the overlay is centered on the primary monitor.
-
-## CI / releases
-
-| Workflow | When | Output |
-|----------|------|--------|
-| [CI](.github/workflows/ci.yml) | every push / PR | `cargo test` + release build (Linux + macOS) |
-| [Release](.github/workflows/release.yml) | push to `master` | Rolling assets on [`continuous`](https://github.com/victormasson/QuickAccent/releases/tag/continuous) (prerelease) |
-| [Release](.github/workflows/release.yml) | tag `v*` | Stable release, notes taken from [CHANGELOG.md](CHANGELOG.md) |
-
-Assets: `quickaccent-linux-x86_64.tar.gz`, `QuickAccent-macos-universal.tar.gz`,
-`SHA256SUMS`, plus a [build-provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations)
-per archive (`gh attestation verify <asset> --repo victormasson/QuickAccent`).
-
-Cutting a release: update `CHANGELOG.md`, bump the version in `Cargo.toml`,
-`dist/macos/QuickAccent.app/Contents/Info.plist`, `dist/omarchy/manifest.json`
-and `dist/arch/PKGBUILD`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
-Once the release is up, pin its sha256 in the PKGBUILD and push to the AUR
-([dist/arch/README.md](dist/arch/README.md)).
-
-Unit tests cover the accent state machine, mappings, config, and helpers.  
-Desktop grab/inject: [docs/MANUAL_TEST.md](docs/MANUAL_TEST.md).
-
-## Stack
-
-- [iced](https://github.com/iced-rs/iced) — overlay
-- CoreGraphics (macOS) / rdev, vendored with a hotplug-grab fix (Linux) — grab
-- uinput virtual keyboard (Linux) — all injection; accents the layout lacks
-  are added to the keymap via a generated xkb option (`~/.config/xkb`)
-- XDG RemoteDesktop portal keysym (Linux, non-GNOME fallback) — one-time
-  authorization, persisted via restore token
-- [enigo](https://github.com/enigo-rs/enigo) (macOS) — inject
-- `wl-copy` (Linux) — emergency fallback only
-- xkbcommon (Linux) — layout-aware accents + char→keycode lookup
-
-## License
-
-MIT. Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+See [character mappings](docs/CHARACTERS.md) for available language sets.

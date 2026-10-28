@@ -268,7 +268,7 @@ fn overlay_settings(size: iced::Size) -> window::Settings {
     #[cfg(target_os = "linux")]
     {
         settings.platform_specific.override_redirect = true;
-        settings.platform_specific.application_id = "quickaccent".into();
+        settings.platform_specific.application_id = "accent".into();
     }
     settings
 }
@@ -647,11 +647,11 @@ fn settings_slider<'a>(
 impl App {
     pub fn new(grab_rx: Arc<Mutex<Option<UnboundedReceiver<GrabEvent>>>>, items_per_page: usize, show_unicode_description: bool) -> (Self, Task<Message>) {
         GRAB_RX.set(grab_rx).ok();
-        // Development aid: QUICKACCENT_DEMO=overlay|grid|settings opens that window
+        // Development aid: ACCENT_DEMO=overlay|grid|settings opens that window
         // at startup without needing the keyboard grab (or its permissions).
-        let demo = std::env::var("QUICKACCENT_DEMO");
+        let demo = std::env::var("ACCENT_DEMO");
         if let Ok(which) = &demo {
-            eprintln!("[QuickAccent] demo mode: {which}");
+            eprintln!("[Accent] demo mode: {which}");
         }
         let boot = match demo.as_deref() {
             Ok("overlay") => Task::done(Message::ShowOverlay(
@@ -900,7 +900,7 @@ impl App {
                 // file lands, which is harmless.
                 crate::mappings::reload(&self.languages);
                 if let Err(e) = crate::config::set_languages(&self.languages) {
-                    eprintln!("[QuickAccent] Failed to save languages: {e}");
+                    eprintln!("[Accent] Failed to save languages: {e}");
                 }
                 Task::none()
             }
@@ -908,7 +908,7 @@ impl App {
                 self.theme_choice = choice;
                 self.dark = self.resolve_dark();
                 if let Err(e) = crate::config::set_theme(choice) {
-                    eprintln!("[QuickAccent] Failed to save theme: {e}");
+                    eprintln!("[Accent] Failed to save theme: {e}");
                 }
                 self.sync_settings_appearance()
             }
@@ -916,7 +916,7 @@ impl App {
                 self.theme_light = choice;
                 self.dark = self.resolve_dark();
                 if let Err(e) = crate::config::set_theme_light(choice) {
-                    eprintln!("[QuickAccent] Failed to save theme_light: {e}");
+                    eprintln!("[Accent] Failed to save theme_light: {e}");
                 }
                 self.sync_settings_appearance()
             }
@@ -924,7 +924,7 @@ impl App {
                 self.theme_dark = choice;
                 self.dark = self.resolve_dark();
                 if let Err(e) = crate::config::set_theme_dark(choice) {
-                    eprintln!("[QuickAccent] Failed to save theme_dark: {e}");
+                    eprintln!("[Accent] Failed to save theme_dark: {e}");
                 }
                 self.sync_settings_appearance()
             }
@@ -936,7 +936,7 @@ impl App {
                     self.activation_key,
                 );
                 if let Err(e) = crate::config::set_u64("hold_delay_ms", self.hold_delay_ms) {
-                    eprintln!("[QuickAccent] Failed to save hold_delay_ms: {e}");
+                    eprintln!("[Accent] Failed to save hold_delay_ms: {e}");
                 }
                 Task::none()
             }
@@ -948,7 +948,7 @@ impl App {
                     self.activation_key,
                 );
                 if let Err(e) = crate::config::set_u64("input_time_ms", self.input_time_ms) {
-                    eprintln!("[QuickAccent] Failed to save input_time_ms: {e}");
+                    eprintln!("[Accent] Failed to save input_time_ms: {e}");
                 }
                 Task::none()
             }
@@ -960,7 +960,7 @@ impl App {
                     self.activation_key,
                 );
                 if let Err(e) = crate::config::set_activation_key(key) {
-                    eprintln!("[QuickAccent] Failed to save activation_key: {e}");
+                    eprintln!("[Accent] Failed to save activation_key: {e}");
                 }
                 Task::none()
             }
@@ -969,7 +969,7 @@ impl App {
                 if let Err(e) =
                     crate::config::set_f64("overlay_opacity", self.overlay_opacity as f64)
                 {
-                    eprintln!("[QuickAccent] Failed to save overlay_opacity: {e}");
+                    eprintln!("[Accent] Failed to save overlay_opacity: {e}");
                 }
                 Task::none()
             }
@@ -978,28 +978,28 @@ impl App {
                 if let Err(e) =
                     crate::config::set_f64("overlay_radius", self.overlay_radius as f64)
                 {
-                    eprintln!("[QuickAccent] Failed to save overlay_radius: {e}");
+                    eprintln!("[Accent] Failed to save overlay_radius: {e}");
                 }
                 Task::none()
             }
             Message::SetChipRadius(v) => {
                 self.chip_radius = v.clamp(0.0, 16.0);
                 if let Err(e) = crate::config::set_f64("chip_radius", self.chip_radius as f64) {
-                    eprintln!("[QuickAccent] Failed to save chip_radius: {e}");
+                    eprintln!("[Accent] Failed to save chip_radius: {e}");
                 }
                 Task::none()
             }
             Message::SetItemsPerPage(v) => {
                 self.set_items_per_page(v.round().clamp(0.0, 30.0) as usize);
                 if let Err(e) = crate::config::set_u64("items_per_page", self.items_per_page as u64) {
-                    eprintln!("[QuickAccent] Failed to save items_per_page: {e}");
+                    eprintln!("[Accent] Failed to save items_per_page: {e}");
                 }
                 Task::none()
             }
             Message::SetShowUnicodeDescription(on) => {
                 self.show_unicode_description = on;
                 if let Err(e) = crate::config::set_bool("show_unicode_description", on) {
-                    eprintln!("[QuickAccent] Failed to save show_unicode_description: {e}");
+                    eprintln!("[Accent] Failed to save show_unicode_description: {e}");
                 }
                 Task::none()
             }
@@ -1326,7 +1326,7 @@ impl App {
         .into();
 
         let body = column(vec![
-            text("QuickAccent").size(22).into(),
+            text("Accent").size(22).into(),
             text("Hold a letter, press Space, pick a variant, release the letter.")
                 .size(13)
                 .into(),

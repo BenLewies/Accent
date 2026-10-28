@@ -25,7 +25,7 @@ pub fn get_option(option: &str) -> Option<String> {
 }
 
 /// Set a config option at runtime. Applies immediately — no re-login, and
-/// the user's config files are left untouched (QuickAccent re-applies it on
+/// the user's config files are left untouched (Accent re-applies it on
 /// every start and after each `configreloaded`).
 ///
 /// Hyprland has two config parsers. The legacy one accepts `hyprctl keyword`;
@@ -109,12 +109,12 @@ pub fn persistent_hint(option: &str, value: &str) -> String {
 }
 
 /// Window class of the accent overlay (see `app.rs`
-/// `application_id = "quickaccent"`).
-pub const OVERLAY_CLASS: &str = "quickaccent";
+/// `application_id = "accent"`).
+pub const OVERLAY_CLASS: &str = "accent";
 
 /// Window class of the Settings window: distinct from the overlay's so the
 /// `no_focus` rule below cannot hit it, and so it can get its own rule.
-pub const SETTINGS_CLASS: &str = "quickaccent-settings";
+pub const SETTINGS_CLASS: &str = "accent-settings";
 
 /// Keep Hyprland's keyboard focus off the accent overlay.
 ///
@@ -135,7 +135,7 @@ pub fn ensure_overlay_no_focus() {
     let legacy = format!("nofocus, class:^({OVERLAY_CLASS})$");
     if !apply_window_rule(&overlay_no_focus_lua(), &[&legacy]) {
         eprintln!(
-            "[QuickAccent] could not keep Hyprland's focus off the accent overlay; \
+            "[Accent] could not keep Hyprland's focus off the accent overlay; \
              picker accents may be swallowed. Add to ~/.config/hypr/windows.lua \
              (Omarchy) or hyprland.lua, then `hyprctl reload`:\n  {}",
             overlay_no_focus_lua()
@@ -147,7 +147,7 @@ pub fn ensure_overlay_no_focus() {
     let center = format!("center, class:^({SETTINGS_CLASS})$");
     if !apply_window_rule(&settings_float_lua(), &[&float, &center]) {
         eprintln!(
-            "[QuickAccent] could not make the Settings window float on Hyprland. \
+            "[Accent] could not make the Settings window float on Hyprland. \
              Add to ~/.config/hypr/windows.lua (Omarchy) or hyprland.lua, then \
              `hyprctl reload`:\n  {}",
             settings_float_lua()
@@ -342,8 +342,8 @@ mod tests {
     #[test]
     fn lua_snippet_builds_nested_tables_and_escapes() {
         assert_eq!(
-            lua_config_snippet("input:kb_options", "caps:escape,quickaccent:accents").as_deref(),
-            Some(r#"hl.config({ input = { kb_options = "caps:escape,quickaccent:accents" } })"#)
+            lua_config_snippet("input:kb_options", "caps:escape,accent:accents").as_deref(),
+            Some(r#"hl.config({ input = { kb_options = "caps:escape,accent:accents" } })"#)
         );
         assert_eq!(
             lua_config_snippet("input:touchpad:natural_scroll", "true").as_deref(),
@@ -379,28 +379,28 @@ mod tests {
     fn overlay_no_focus_rule_targets_the_overlay_class() {
         assert_eq!(
             overlay_no_focus_lua(),
-            r#"hl.window_rule({ match = { class = "quickaccent" }, no_focus = true })"#
+            r#"hl.window_rule({ match = { class = "accent" }, no_focus = true })"#
         );
-        assert_eq!(OVERLAY_CLASS, "quickaccent");
+        assert_eq!(OVERLAY_CLASS, "accent");
         assert_eq!(
             settings_float_lua(),
-            r#"hl.window_rule({ match = { class = "quickaccent-settings" }, float = true, center = true })"#
+            r#"hl.window_rule({ match = { class = "accent-settings" }, float = true, center = true })"#
         );
         assert_ne!(SETTINGS_CLASS, OVERLAY_CLASS, "no_focus must not hit the Settings window");
     }
 
     #[test]
     fn merges_option_lists_without_duplicates() {
-        assert_eq!(merge_option_list("", "quickaccent:accents"), "quickaccent:accents");
+        assert_eq!(merge_option_list("", "accent:accents"), "accent:accents");
         assert_eq!(
-            merge_option_list("caps:escape", "quickaccent:accents"),
-            "caps:escape,quickaccent:accents"
+            merge_option_list("caps:escape", "accent:accents"),
+            "caps:escape,accent:accents"
         );
         // Already present → stays once, and keeps its neighbours.
         assert_eq!(
-            merge_option_list("caps:escape,quickaccent:accents,grp:alts_toggle", "quickaccent:accents"),
-            "caps:escape,grp:alts_toggle,quickaccent:accents"
+            merge_option_list("caps:escape,accent:accents,grp:alts_toggle", "accent:accents"),
+            "caps:escape,grp:alts_toggle,accent:accents"
         );
-        assert_eq!(merge_option_list("  ,  ", "quickaccent:accents"), "quickaccent:accents");
+        assert_eq!(merge_option_list("  ,  ", "accent:accents"), "accent:accents");
     }
 }

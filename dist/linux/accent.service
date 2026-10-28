@@ -1,12 +1,12 @@
 [Unit]
-Description=QuickAccent accent character picker
-Documentation=https://github.com/victormasson/QuickAccent
+Description=Accent accent character picker
+Documentation=https://github.com/BenLewies/Accent
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/quickaccent
+ExecStart=/usr/bin/accent
 Restart=on-failure
 RestartSec=2
 Environment=PATH=/usr/bin:/usr/local/bin:%h/.local/bin

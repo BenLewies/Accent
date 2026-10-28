@@ -55,7 +55,7 @@ pub fn start() {
             {
                 Ok(rt) => rt,
                 Err(e) => {
-                    eprintln!("[QuickAccent] portal runtime failed: {e}");
+                    eprintln!("[Accent] portal runtime failed: {e}");
                     STATE.store(STATE_FAILED, Ordering::SeqCst);
                     return;
                 }
@@ -135,14 +135,14 @@ async fn run() {
         Ok((proxy, session)) => {
             STATE.store(STATE_READY, Ordering::SeqCst);
             eprintln!(
-                "[QuickAccent] direct Unicode injection ready (portal authorization remembered)"
+                "[Accent] direct Unicode injection ready (portal authorization remembered)"
             );
             while let Some(req) = rx.recv().await {
                 let result = send_text(&proxy, &session, &req.text)
                     .await
                     .map_err(|e| e.to_string());
                 if let Err(e) = &result {
-                    eprintln!("[QuickAccent] portal injection failed: {e}");
+                    eprintln!("[Accent] portal injection failed: {e}");
                 }
                 let _ = req.resp.send(result);
             }
@@ -150,14 +150,14 @@ async fn run() {
         Err(e) => {
             STATE.store(STATE_FAILED, Ordering::SeqCst);
             let remedy = if is_gnome() {
-                "To enable direct typing, restart QuickAccent and accept the one-time\n\
+                "To enable direct typing, restart Accent and accept the one-time\n\
                  input-sharing dialog (GNOME remembers it permanently)."
             } else {
                 "This desktop has no RemoteDesktop portal backend; enabling the keymap\n\
                  option is the way to get direct typing (see the lines above)."
             };
             eprintln!(
-                "[QuickAccent] portal input unavailable ({e}).\n\
+                "[Accent] portal input unavailable ({e}).\n\
                  Characters outside your keyboard layout will use the clipboard fallback\n\
                  (Ctrl+V — terminals treat it literally).\n{remedy}"
             );
@@ -188,7 +188,7 @@ async fn connect(
         .await?
         .response()?;
     eprintln!(
-        "[QuickAccent] portal granted devices: {:?}",
+        "[Accent] portal granted devices: {:?}",
         devices.devices()
     );
     if let Some(t) = devices.restore_token() {
@@ -197,7 +197,7 @@ async fn connect(
     Ok((proxy, session))
 }
 
-/// Diagnostic for `quickaccent --portal-probe [char]`: connect, print the
+/// Diagnostic for `accent --portal-probe [char]`: connect, print the
 /// granted device set, optionally type `test_char` after 2s into whatever is
 /// focused.
 pub fn probe(test_char: Option<char>) {
@@ -276,7 +276,7 @@ fn load_token() -> Option<String> {
 
 fn save_token(token: &str) {
     if let Err(e) = crate::xkb_custom::write_file(&token_path(), token) {
-        eprintln!("[QuickAccent] could not save portal token: {e}");
+        eprintln!("[Accent] could not save portal token: {e}");
     }
 }
 

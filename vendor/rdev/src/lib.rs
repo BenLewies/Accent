@@ -1,4 +1,4 @@
-// QuickAccent vendored copy: silence upstream warnings that registry builds
+// Accent vendored copy: silence upstream warnings that registry builds
 // hide via cap-lints.
 #![allow(static_mut_refs)]
 
@@ -378,7 +378,7 @@ where
     crate::linux::grab_with_tick(callback, tick)
 }
 
-// QuickAccent patch: Linux-only variant of `grab` whose callback also
+// Accent patch: Linux-only variant of `grab` whose callback also
 // receives `is_repeat` — true for kernel autorepeat key events (EV_KEY
 // value 2), which stock rdev collapses into indistinguishable KeyPress.
 #[cfg(feature = "unstable_grab")]
@@ -390,7 +390,7 @@ where
     crate::linux::grab_with_is_repeat(callback)
 }
 
-// QuickAccent patch: exclude a device (by its input device name) from
+// Accent patch: exclude a device (by its input device name) from
 // grabbing — used by the embedding app so its own injection device's events
 // go straight to the compositor instead of looping back through the grab.
 #[cfg(feature = "unstable_grab")]

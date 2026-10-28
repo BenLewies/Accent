@@ -30,9 +30,9 @@ use std::time::{Duration, Instant};
 use notify::{recommended_watcher, RecursiveMode, Watcher};
 
 const HELP: &str = "\
-QuickAccent \u{2014} hold a letter, press Space, pick an accent character.
+Accent \u{2014} hold a letter, press Space, pick an accent character.
 
-Usage: quickaccent [OPTIONS]
+Usage: accent [OPTIONS]
 
 Options:
   -h, --help       Print this help
@@ -40,12 +40,12 @@ Options:
       --settings   Open the Settings window of the running daemon (Linux)
       --quit       Stop the running daemon (Linux)
 
-Launching quickaccent while the daemon is already running opens its
+Launching accent while the daemon is already running opens its
 Settings window, so a launcher or dock entry doubles as the settings menu.
 
 Runs as a background daemon: no window is shown until the picker opens.
-Config: ~/.config/quickaccent/config.toml (hot-reloaded)
-Logs:   journalctl --user -u quickaccent -f
+Config: ~/.config/accent/config.toml (hot-reloaded)
+Logs:   journalctl --user -u accent -f
 ";
 
 fn main() -> iced::Result {
@@ -54,7 +54,7 @@ fn main() -> iced::Result {
     // Answer CLI flags before touching the config, display or input devices.
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.iter().any(|a| a == "--version" || a == "-V") {
-        println!("quickaccent {}", env!("CARGO_PKG_VERSION"));
+        println!("accent {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
     if args.iter().any(|a| a == "--help" || a == "-h") {
@@ -68,8 +68,8 @@ fn main() -> iced::Result {
         if args.iter().any(|a| a == flag) {
             if let Err(e) = dbus_service::call_remote(method) {
                 eprintln!(
-                    "[QuickAccent] no running daemon to talk to ({e}). \
-                     Start it with: systemctl --user start quickaccent"
+                    "[Accent] no running daemon to talk to ({e}). \
+                     Start it with: systemctl --user start accent"
                 );
                 std::process::exit(1);
             }
@@ -77,7 +77,7 @@ fn main() -> iced::Result {
         }
     }
 
-    // Diagnostic mode: quickaccent --portal-probe [char]
+    // Diagnostic mode: accent --portal-probe [char]
     #[cfg(target_os = "linux")]
     {
         let args: Vec<String> = std::env::args().collect();
@@ -92,7 +92,7 @@ fn main() -> iced::Result {
     }
 
     // Demo mode never grabs the keyboard, so it may run beside the daemon.
-    if std::env::var_os("QUICKACCENT_DEMO").is_none() && !acquire_single_instance_lock() {
+    if std::env::var_os("ACCENT_DEMO").is_none() && !acquire_single_instance_lock() {
         return Ok(());
     }
 
@@ -111,13 +111,13 @@ fn main() -> iced::Result {
 
     // Demo instances must not answer (or steal) the daemon's bus name.
     #[cfg(target_os = "linux")]
-    if std::env::var_os("QUICKACCENT_DEMO").is_none() {
+    if std::env::var_os("ACCENT_DEMO").is_none() {
         crate::dbus_service::start();
     }
 
-    // QUICKACCENT_DEMO opens a window for inspection; a second instance must
+    // ACCENT_DEMO opens a window for inspection; a second instance must
     // not also take over the keyboard.
-    if std::env::var_os("QUICKACCENT_DEMO").is_none() {
+    if std::env::var_os("ACCENT_DEMO").is_none() {
         grab::run_grab_thread(tx, &config);
     } else {
         drop(tx);
@@ -127,7 +127,7 @@ fn main() -> iced::Result {
     crate::macos::setup_status_item();
 
     let grab_rx_clone = grab_rx.clone();
-    iced::daemon("QuickAccent", app::App::update, app::App::view)
+    iced::daemon("Accent", app::App::update, app::App::view)
         .subscription(app::App::subscription)
         .theme(app::App::theme)
         .style(app::App::style)
@@ -181,7 +181,7 @@ fn setup_direct_typing() {
     let base_missing = xkb_map::chars_missing_from_base(&all);
     if !base_missing.is_empty() {
         eprintln!(
-            "[QuickAccent] {} accent characters are not in the base keyboard layout \
+            "[Accent] {} accent characters are not in the base keyboard layout \
              (e.g. {:?})",
             base_missing.len(),
             base_missing.iter().take(5).collect::<String>()
@@ -203,7 +203,7 @@ fn setup_direct_typing() {
         let sample: String = still_missing.iter().take(5).collect();
         if portal_keysym::available() {
             eprintln!(
-                "[QuickAccent] {} characters still not typeable via the keymap \
+                "[Accent] {} characters still not typeable via the keymap \
                  (e.g. {sample:?}) — starting portal injection",
                 still_missing.len()
             );
@@ -220,7 +220,7 @@ fn setup_direct_typing() {
                 )
             };
             eprintln!(
-                "[QuickAccent] {} characters still not typeable via the keymap \
+                "[Accent] {} characters still not typeable via the keymap \
                  (e.g. {sample:?}) and this desktop has no RemoteDesktop portal \
                  backend — they will use the clipboard fallback (Ctrl+V; terminals \
                  treat it literally). To type them directly, {hint}",
@@ -242,7 +242,7 @@ fn acquire_single_instance_lock() -> bool {
     let dir = std::env::var_os("XDG_RUNTIME_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(std::env::temp_dir);
-    let path = dir.join("quickaccent.lock");
+    let path = dir.join("accent.lock");
     let Ok(file) = std::fs::OpenOptions::new()
         .create(true)
         .read(true)
@@ -277,7 +277,7 @@ fn acquire_single_instance_lock() -> bool {
         if running_as_service && attempts < 10 {
             if attempts == 0 {
                 eprintln!(
-                    "[QuickAccent] another instance (PID {holder}) holds the input grab; \
+                    "[Accent] another instance (PID {holder}) holds the input grab; \
                      the service takes over — asking it to quit."
                 );
                 terminate_own_instance(&holder, false);
@@ -293,7 +293,7 @@ fn acquire_single_instance_lock() -> bool {
         if running_as_service {
             // Exit non-zero so Restart=on-failure keeps trying instead of
             // leaving the service silently dead.
-            eprintln!("[QuickAccent] could not take over from PID {holder}; retrying via systemd");
+            eprintln!("[Accent] could not take over from PID {holder}; retrying via systemd");
             std::process::exit(1);
         }
         // A launcher / app-grid click while the daemon runs: the useful
@@ -301,22 +301,22 @@ fn acquire_single_instance_lock() -> bool {
         // menu; on GNOME the top-bar menu does the same).
         #[cfg(target_os = "linux")]
         if dbus_service::call_remote("OpenSettings").is_ok() {
-            eprintln!("[QuickAccent] already running (PID {holder}) — opened its Settings window.");
+            eprintln!("[Accent] already running (PID {holder}) — opened its Settings window.");
             return false;
         }
         eprintln!(
-            "[QuickAccent] already running (PID {holder}) — nothing to do.\n{}",
+            "[Accent] already running (PID {holder}) — nothing to do.\n{}",
             if cfg!(target_os = "macos") {
                 "Quit it from the menu bar icon first if you want to restart it."
             } else {
-                "Manage it with: systemctl --user restart quickaccent"
+                "Manage it with: systemctl --user restart accent"
             }
         );
         return false;
     }
 }
 
-/// Signal `pid` only if it really is a quickaccent process. Identified via
+/// Signal `pid` only if it really is a accent process. Identified via
 /// /proc/PID/comm — NOT /proc/PID/exe, whose link gains a " (deleted)"
 /// suffix as soon as the binary on disk is replaced by an upgrade, which
 /// made the old check silently refuse the exact process it existed for.
@@ -325,7 +325,7 @@ fn terminate_own_instance(pid: &str, force: bool) {
         return;
     }
     let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default();
-    if comm.trim() != "quickaccent" {
+    if comm.trim() != "accent" {
         return;
     }
     let mut cmd = std::process::Command::new("kill");
@@ -345,12 +345,12 @@ fn start_config_watcher() {
         let mut watcher = match recommended_watcher(tx) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[QuickAccent] Failed to create config watcher: {}", e);
+                eprintln!("[Accent] Failed to create config watcher: {}", e);
                 return;
             }
         };
         if let Err(e) = watcher.watch(&config_dir, RecursiveMode::NonRecursive) {
-            eprintln!("[QuickAccent] Failed to watch config dir: {}", e);
+            eprintln!("[Accent] Failed to watch config dir: {}", e);
             return;
         }
         let mut last_reload = Instant::now() - Duration::from_secs(1);
@@ -378,7 +378,7 @@ fn start_config_watcher() {
                             cfg.activation_key_parsed(),
                         );
                         eprintln!(
-                            "[QuickAccent] Reloaded config: languages = {:?}",
+                            "[Accent] Reloaded config: languages = {:?}",
                             cfg.languages
                         );
                         // New languages may need new keymap slots / the portal.
@@ -386,7 +386,7 @@ fn start_config_watcher() {
                         setup_direct_typing();
                     }
                 }
-                Err(e) => eprintln!("[QuickAccent] Config watcher error: {}", e),
+                Err(e) => eprintln!("[Accent] Config watcher error: {}", e),
             }
         }
     });

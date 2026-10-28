@@ -1,4 +1,4 @@
-//! Session-bus API the GNOME Shell panel menu, `quickaccent --settings` and
+//! Session-bus API the GNOME Shell panel menu, `accent --settings` and
 //! a second launch of the app call (Settings… / Quit).
 
 use zbus::connection::Builder;
@@ -6,7 +6,7 @@ use zbus::interface;
 
 struct Service;
 
-#[interface(name = "io.github.victormasson.QuickAccent")]
+#[interface(name = "io.github.BenLewies.Accent")]
 impl Service {
     fn open_settings(&self) {
         crate::app::request(crate::app::UiEvent::OpenSettings);
@@ -21,7 +21,7 @@ impl Service {
 /// runtime (zbus's tokio backend will not run on a bare OS thread).
 pub fn start() {
     std::thread::Builder::new()
-        .name("quickaccent-dbus".into())
+        .name("accent-dbus".into())
         .spawn(serve)
         .ok();
 }
@@ -33,7 +33,7 @@ fn serve() {
     {
         Ok(rt) => rt,
         Err(e) => {
-            eprintln!("[QuickAccent] D-Bus runtime: {e}");
+            eprintln!("[Accent] D-Bus runtime: {e}");
             return;
         }
     };
@@ -47,7 +47,7 @@ fn serve() {
                 Ok(()) => return,
                 Err(e) => {
                     if attempt == 0 {
-                        eprintln!("[QuickAccent] D-Bus: {e} — retrying");
+                        eprintln!("[Accent] D-Bus: {e} — retrying");
                     }
                     attempt += 1;
                     tokio::time::sleep(std::time::Duration::from_secs(2.min(attempt as u64 * 2)))
@@ -73,8 +73,8 @@ async fn export() -> zbus::Result<()> {
     Ok(())
 }
 
-const NAME: &str = "io.github.victormasson.QuickAccent";
-const PATH: &str = "/io/github/victormasson/QuickAccent";
+const NAME: &str = "io.github.BenLewies.Accent";
+const PATH: &str = "/io/github/BenLewies/Accent";
 
 /// Call `OpenSettings` or `Quit` on the running daemon. Errors when no
 /// daemon owns the name.

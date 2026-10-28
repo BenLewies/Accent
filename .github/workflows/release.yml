@@ -15,7 +15,7 @@ permissions:
   contents: write
   # Build-provenance attestations (Sigstore) for the release tarballs, so
   # anyone can verify an asset independently of the download host:
-  #   gh attestation verify quickaccent-linux-x86_64.tar.gz --repo victormasson/QuickAccent
+  #   gh attestation verify accent-linux-x86_64.tar.gz --repo BenLewies/Accent
   id-token: write
   attestations: write
 
@@ -61,23 +61,23 @@ jobs:
 
       - name: Package
         run: |
-          strip target/release/quickaccent || true
-          STAGE=quickaccent-linux-x86_64
+          strip target/release/accent || true
+          STAGE=accent-linux-x86_64
           mkdir -p "$STAGE"
-          cp target/release/quickaccent "$STAGE/"
-          cp dist/linux/quickaccent.service "$STAGE/"
-          cp dist/linux/quickaccent.desktop "$STAGE/"
-          cp dist/linux/60-quickaccent.rules "$STAGE/"
-          cp assets/icon-app.svg "$STAGE/quickaccent.svg"
-          cp assets/icon-app-256.png "$STAGE/quickaccent-256.png"
-          cp assets/icon-app-512.png "$STAGE/quickaccent-512.png"
+          cp target/release/accent "$STAGE/"
+          cp dist/linux/accent.service "$STAGE/"
+          cp dist/linux/accent.desktop "$STAGE/"
+          cp dist/linux/60-accent.rules "$STAGE/"
+          cp assets/icon-app.svg "$STAGE/accent.svg"
+          cp assets/icon-app-256.png "$STAGE/accent-256.png"
+          cp assets/icon-app-512.png "$STAGE/accent-512.png"
           cp LICENSE "$STAGE/"
-          tar -czf quickaccent-linux-x86_64.tar.gz "$STAGE"
+          tar -czf accent-linux-x86_64.tar.gz "$STAGE"
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64
-          path: quickaccent-linux-x86_64.tar.gz
+          path: accent-linux-x86_64.tar.gz
           if-no-files-found: error
 
   macos:
@@ -99,30 +99,30 @@ jobs:
         run: |
           cargo build --release --target aarch64-apple-darwin
           cargo build --release --target x86_64-apple-darwin
-          lipo -create -output quickaccent-universal \
-            target/aarch64-apple-darwin/release/quickaccent \
-            target/x86_64-apple-darwin/release/quickaccent
-          lipo -info quickaccent-universal
+          lipo -create -output accent-universal \
+            target/aarch64-apple-darwin/release/accent \
+            target/x86_64-apple-darwin/release/accent
+          lipo -info accent-universal
 
       - name: Package .app
         run: |
-          APP=QuickAccent.app
+          APP=Accent.app
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          cp quickaccent-universal "$APP/Contents/MacOS/quickaccent"
-          chmod +x "$APP/Contents/MacOS/quickaccent"
-          cp dist/macos/QuickAccent.app/Contents/Info.plist "$APP/Contents/Info.plist"
+          cp accent-universal "$APP/Contents/MacOS/accent"
+          chmod +x "$APP/Contents/MacOS/accent"
+          cp dist/macos/Accent.app/Contents/Info.plist "$APP/Contents/Info.plist"
           cp dist/macos/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
           # Ad-hoc sign the bundle. Without a bundle-level signature TCC has
           # no stable code requirement to bind the Accessibility grant to, so
           # the toggle never takes effect (and duplicate entries pile up).
           codesign --force --sign - "$APP"
           codesign --verify --strict "$APP"
-          tar -czf QuickAccent-macos-universal.tar.gz "$APP"
+          tar -czf Accent-macos-universal.tar.gz "$APP"
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos-universal
-          path: QuickAccent-macos-universal.tar.gz
+          path: Accent-macos-universal.tar.gz
           if-no-files-found: error
 
   publish:
@@ -140,15 +140,15 @@ jobs:
       - name: Checksums
         run: |
           cd artifacts
-          sha256sum quickaccent-linux-x86_64.tar.gz QuickAccent-macos-universal.tar.gz > SHA256SUMS
+          sha256sum accent-linux-x86_64.tar.gz Accent-macos-universal.tar.gz > SHA256SUMS
           cat SHA256SUMS
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            artifacts/quickaccent-linux-x86_64.tar.gz
-            artifacts/QuickAccent-macos-universal.tar.gz
+            artifacts/accent-linux-x86_64.tar.gz
+            artifacts/Accent-macos-universal.tar.gz
 
       - name: List artifacts
         run: ls -la artifacts/
@@ -164,7 +164,7 @@ jobs:
             found { print }
           ' CHANGELOG.md > RELEASE_NOTES.md || true
           if [ ! -s RELEASE_NOTES.md ]; then
-            echo "QuickAccent ${GITHUB_REF_NAME}" > RELEASE_NOTES.md
+            echo "Accent ${GITHUB_REF_NAME}" > RELEASE_NOTES.md
           fi
           cat >> RELEASE_NOTES.md <<EOF
 
@@ -172,29 +172,29 @@ jobs:
 
           \`\`\`bash
           # Arch / Omarchy (AUR)
-          yay -S quickaccent-bin
+          yay -S accent-bin
 
           # Other Linux (Fedora, Debian…): clone at this tag, the installer verifies
           # the asset against SHA256SUMS before installing it
           git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
-          QuickAccent/dist/linux/install.sh
+          Accent/dist/linux/install.sh
 
           # macOS (universal)
           git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
-          QuickAccent/dist/macos/install.sh
+          Accent/dist/macos/install.sh
           \`\`\`
 
           ## Verify an asset
 
           \`\`\`bash
           sha256sum -c --ignore-missing SHA256SUMS
-          gh attestation verify quickaccent-linux-x86_64.tar.gz --repo ${{ github.repository }}
+          gh attestation verify accent-linux-x86_64.tar.gz --repo ${{ github.repository }}
           \`\`\`
 
           | File | Platform |
           |------|----------|
-          | \`quickaccent-linux-x86_64.tar.gz\` | Linux x86_64 |
-          | \`QuickAccent-macos-universal.tar.gz\` | macOS universal (arm64 + x86_64) |
+          | \`accent-linux-x86_64.tar.gz\` | Linux x86_64 |
+          | \`Accent-macos-universal.tar.gz\` | macOS universal (arm64 + x86_64) |
           | \`SHA256SUMS\` | Checksums of the two archives |
           EOF
           echo "--- release notes ---"; cat RELEASE_NOTES.md
@@ -209,8 +209,8 @@ jobs:
           make_latest: true
           body_path: RELEASE_NOTES.md
           files: |
-            artifacts/quickaccent-linux-x86_64.tar.gz
-            artifacts/QuickAccent-macos-universal.tar.gz
+            artifacts/accent-linux-x86_64.tar.gz
+            artifacts/Accent-macos-universal.tar.gz
             artifacts/SHA256SUMS
           fail_on_unmatched_files: true
         env:
@@ -239,21 +239,21 @@ jobs:
             ### Assets
             | File | Platform |
             |------|----------|
-            | `quickaccent-linux-x86_64.tar.gz` | Linux x86_64 |
-            | `QuickAccent-macos-universal.tar.gz` | macOS universal (arm64 + x86_64) |
+            | `accent-linux-x86_64.tar.gz` | Linux x86_64 |
+            | `Accent-macos-universal.tar.gz` | macOS universal (arm64 + x86_64) |
 
             ### Install
             Rolling builds are for testing. From a clone of `master`:
             ```bash
-            QUICKACCENT_VERSION=continuous ./dist/linux/install.sh   # Linux
-            QUICKACCENT_VERSION=continuous ./dist/macos/install.sh   # macOS
+            ACCENT_VERSION=continuous ./dist/linux/install.sh   # Linux
+            ACCENT_VERSION=continuous ./dist/macos/install.sh   # macOS
             ```
             Verify an asset with `sha256sum -c --ignore-missing SHA256SUMS` or
             `gh attestation verify <asset> --repo ${{ github.repository }}`.
             For the stable install see the [README](https://github.com/${{ github.repository }}#install).
           files: |
-            artifacts/quickaccent-linux-x86_64.tar.gz
-            artifacts/QuickAccent-macos-universal.tar.gz
+            artifacts/accent-linux-x86_64.tar.gz
+            artifacts/Accent-macos-universal.tar.gz
             artifacts/SHA256SUMS
           fail_on_unmatched_files: true
         env:

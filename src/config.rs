@@ -275,7 +275,7 @@ impl Default for Config {
 
 pub fn config_path() -> PathBuf {
     if let Some(home) = dirs::home_dir() {
-        home.join(".config").join("quickaccent").join("config.toml")
+        home.join(".config").join("accent").join("config.toml")
     } else {
         PathBuf::from("config.toml")
     }
@@ -283,18 +283,18 @@ pub fn config_path() -> PathBuf {
 
 pub fn load_config() -> Config {
     let path = config_path();
-    eprintln!("[QuickAccent] Looking for config at: {}", path.display());
+    eprintln!("[Accent] Looking for config at: {}", path.display());
 
     match std::fs::read_to_string(&path) {
         Ok(contents) => match toml::from_str::<Config>(&contents) {
             Ok(config) => {
-                eprintln!("[QuickAccent] Loaded config: languages = {:?}, input_time_ms = {}, hold_delay_ms = {}, activation_key = {}, items_per_page = {}, show_unicode_description = {}",
+                eprintln!("[Accent] Loaded config: languages = {:?}, input_time_ms = {}, hold_delay_ms = {}, activation_key = {}, items_per_page = {}, show_unicode_description = {}",
                     config.languages, config.input_time_ms, config.hold_delay_ms, config.activation_key, config.items_per_page, config.show_unicode_description);
                 config
             }
             Err(e) => {
                 eprintln!(
-                    "[QuickAccent] Failed to parse config: {}. Using defaults.",
+                    "[Accent] Failed to parse config: {}. Using defaults.",
                     e
                 );
                 Config::default()
@@ -302,7 +302,7 @@ pub fn load_config() -> Config {
         },
         Err(_) => {
             eprintln!(
-                "[QuickAccent] No config file found. Creating default at {}",
+                "[Accent] No config file found. Creating default at {}",
                 path.display()
             );
             let config = Config::default();
@@ -310,7 +310,7 @@ pub fn load_config() -> Config {
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent).ok();
             }
-            let default_toml = r#"# QuickAccent Configuration
+            let default_toml = r#"# Accent Configuration
 # Available languages:
 #   Catalan, CrimeanTatar, Croatian, Czech, Danish, Dutch, Esperanto,
 #   Estonian, Finnish, French, German, Greek, Hungarian, IPA, Iceland,
@@ -565,11 +565,11 @@ mod tests {
     }
     #[test]
     fn replace_assignment_keeps_everything_else() {
-        let doc = "# QuickAccent Configuration\n# comment\n\nlanguages = [\"French\"]\n\n# hold\n# hold_delay_ms = 250\ninput_time_ms = 100\n";
+        let doc = "# Accent Configuration\n# comment\n\nlanguages = [\"French\"]\n\n# hold\n# hold_delay_ms = 250\ninput_time_ms = 100\n";
         let out = replace_assignment(doc, "languages", "[\"German\", \"Spanish\"]");
         assert_eq!(
             out,
-            "# QuickAccent Configuration\n# comment\n\nlanguages = [\"German\", \"Spanish\"]\n\n# hold\n# hold_delay_ms = 250\ninput_time_ms = 100\n"
+            "# Accent Configuration\n# comment\n\nlanguages = [\"German\", \"Spanish\"]\n\n# hold\n# hold_delay_ms = 250\ninput_time_ms = 100\n"
         );
         let parsed = parse_config_str(&out).unwrap();
         assert_eq!(parsed.languages, ["German", "Spanish"]);

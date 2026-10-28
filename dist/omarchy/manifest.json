@@ -1,17 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.victormasson.quickaccent",
-  "name": "QuickAccent",
+  "id": "bjl.accent",
+  "name": "Accent",
   "version": "1.3.0",
-  "author": "Victor Masson",
+  "author": "BenLewies",
   "license": "MIT",
-  "description": "Hold a letter, press Space, pick an accent character. Types é è ê directly on a US keyboard.",
-  "kinds": ["bar-widget"],
-  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "description": "Accent settings and service controls, following the desktop appearance.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
   "barWidget": {
-    "displayName": "QuickAccent",
-    "description": "Accent picker status — click to toggle the daemon",
+    "displayName": "Accent",
+    "description": "Click for settings; right-click for pause, restart and automatic startup.",
     "category": "System",
-    "allowMultiple": false
+    "allowMultiple": false,
+    "defaultSection": "right"
   }
 }

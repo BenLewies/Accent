@@ -125,7 +125,7 @@ fn build_map(languages: &[String]) -> HashMap<MappingKey, Vec<String>> {
                 }
             }
         } else {
-            eprintln!("[QuickAccent] Unknown language: {}", lang_name);
+            eprintln!("[Accent] Unknown language: {}", lang_name);
         }
     }
 

@@ -1,4 +1,4 @@
-# QuickAccent on macOS
+# Accent on macOS
 
 ## Install (prebuilt, no Rust)
 
@@ -7,43 +7,43 @@ for that same tag, verifies it against `SHA256SUMS` (and the Sigstore
 attestation when `gh` is logged in), and stops on any mismatch:
 
 ```bash
-git clone --branch v1.3.0 --depth 1 https://github.com/victormasson/QuickAccent
-QuickAccent/dist/macos/install.sh
-open ~/Applications/QuickAccent.app
+git clone --branch v1.3.0 --depth 1 https://github.com/BenLewies/Accent
+Accent/dist/macos/install.sh
+open ~/Applications/Accent.app
 ```
 
 Grant **Accessibility** (System Settings → Privacy & Security → Accessibility).
-If a stale QuickAccent entry is already listed (an older install), remove it
+If a stale Accent entry is already listed (an older install), remove it
 and add the new one — the grant is bound to the bundle's code signature.
 
 Always launch through Launch Services (`open`, Finder, or a LaunchAgent that
-runs `open`). If launchd execs `Contents/MacOS/quickaccent` directly, macOS
+runs `open`). If launchd execs `Contents/MacOS/accent` directly, macOS
 ignores the Accessibility grant and the app logs `Failed to create CGEventTap`.
 
-Downloads `QuickAccent-macos-universal.tar.gz` from the rolling [`continuous`](https://github.com/victormasson/QuickAccent/releases/tag/continuous) release (arm64 + x86_64).
+Downloads `Accent-macos-universal.tar.gz` from the rolling [`continuous`](https://github.com/BenLewies/Accent/releases/tag/continuous) release (arm64 + x86_64).
 
 | Env | Default |
 |-----|---------|
-| `GITHUB_REPO` | `victormasson/QuickAccent` |
-| `QUICKACCENT_VERSION` | `continuous` |
+| `GITHUB_REPO` | `BenLewies/Accent` |
+| `ACCENT_VERSION` | `continuous` |
 | `PREFIX` | `~/Applications` |
 | `INSTALL_FROM_SOURCE` | `0` |
 
 ## Start at login
 
 ```bash
-cp dist/macos/com.quickaccent.app.plist ~/Library/LaunchAgents/
+cp dist/macos/com.accent.app.plist ~/Library/LaunchAgents/
 # edit the app path inside if you installed to ~/Applications
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.quickaccent.app.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.accent.app.plist
 ```
 
-Logs go to `/tmp/quickaccent.log` / `/tmp/quickaccent.err`. Stop with
-`launchctl bootout gui/$(id -u)/com.quickaccent.app`.
+Logs go to `/tmp/accent.log` / `/tmp/accent.err`. Stop with
+`launchctl bootout gui/$(id -u)/com.accent.app`.
 
 ## Homebrew (from source)
 
 ```bash
-brew install --HEAD ./dist/brew/Formula/quickaccent.rb
+brew install --HEAD ./dist/brew/Formula/accent.rb
 ```
 
 ## From source

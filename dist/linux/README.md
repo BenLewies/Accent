@@ -1,12 +1,12 @@
-# QuickAccent on Linux
+# Accent on Linux
 
 ## Install (prebuilt, no Rust)
 
 Release assets are verifiable: each release carries `SHA256SUMS` and a
 Sigstore build-provenance attestation
-(`gh attestation verify quickaccent-linux-x86_64.tar.gz --repo victormasson/QuickAccent`).
+(`gh attestation verify accent-linux-x86_64.tar.gz --repo BenLewies/Accent`).
 
-**Arch / Omarchy:** AUR package `quickaccent-bin`, see [../arch/](../arch/README.md).
+**Arch / Omarchy:** AUR package `accent-bin`, see [../arch/](../arch/README.md).
 
 **Fedora / Debian / others:** clone the release tag and run the installer from
 it. The installer downloads the asset for the same tag, checks it against
@@ -17,16 +17,16 @@ mismatch. Nothing downloaded is ever executed before verification.
 # Fedora / GNOME Wayland (Debian / Ubuntu: apt install wl-clipboard)
 sudo dnf install -y wl-clipboard
 
-git clone --branch v1.3.0 --depth 1 https://github.com/victormasson/QuickAccent
-QuickAccent/dist/linux/install.sh
+git clone --branch v1.3.0 --depth 1 https://github.com/BenLewies/Accent
+Accent/dist/linux/install.sh
 sudo reboot
 ```
 
 | Env | Default | Meaning |
 |-----|---------|---------|
-| `GITHUB_REPO` | `victormasson/QuickAccent` | Repo for assets |
-| `QUICKACCENT_VERSION` | version of the checkout | Release tag; `latest` = newest stable, `continuous` = rolling build |
-| `QUICKACCENT_SKIP_VERIFY` | `0` | Set `1` only for releases before v1.2.0, which have no `SHA256SUMS` |
+| `GITHUB_REPO` | `BenLewies/Accent` | Repo for assets |
+| `ACCENT_VERSION` | version of the checkout | Release tag; `latest` = newest stable, `continuous` = rolling build |
+| `ACCENT_SKIP_VERIFY` | `0` | Set `1` only for releases before v1.2.0, which have no `SHA256SUMS` |
 | `PREFIX` | `~/.local` | Install prefix (`bin/`) |
 | `INSTALL_FROM_SOURCE` | `0` | Set `1` to `cargo build` instead |
 
@@ -39,21 +39,21 @@ sudo reboot
 
 Injection is always direct — no permission prompt, no clipboard. Accents your
 layout lacks (`é` on US, `É` on AZERTY…) are **added to the keymap** at
-startup: QuickAccent generates the xkb option `quickaccent:accents` in
+startup: Accent generates the xkb option `accent:accents` in
 `~/.config/xkb/` (mapping them onto spare keycodes: F13–F23 plus a few
 multimedia codes, F24 as the level-3 shift; 80 characters fit) and enables it in
 GNOME's `xkb-options`; the compositor reloads the keymap live and the
 characters are typed as ordinary keystrokes through uinput. Remove with
 `gsettings reset org.gnome.desktop.input-sources xkb-options` (restores your
-previous options minus ours) and delete `~/.config/xkb/symbols/quickaccent`.
+previous options minus ours) and delete `~/.config/xkb/symbols/accent`.
 
 Only one instance runs at a time: a second launch (autostart entry, app-grid
 click) exits with "already running", and the systemd service always wins over
 a manually started copy.
 
 ```bash
-journalctl --user -u quickaccent -f
-systemctl --user restart quickaccent.service
+journalctl --user -u accent -f
+systemctl --user restart accent.service
 ```
 
 ## What you need
@@ -70,28 +70,28 @@ systemctl --user restart quickaccent.service
 
 ## Settings without a panel icon (Hyprland and other desktops)
 
-There is no top-bar menu outside GNOME. Instead, launching QuickAccent while
+There is no top-bar menu outside GNOME. Instead, launching Accent while
 the daemon runs opens its Settings window over D-Bus (click the app in your
-launcher or dock), the desktop entry has *Settings* / *Quit QuickAccent*
-actions for launchers that show them, `quickaccent --settings` and
-`quickaccent --quit` do the same from a terminal, and a right-click on the
+launcher or dock), the desktop entry has *Settings* / *Quit Accent*
+actions for launchers that show them, `accent --settings` and
+`accent --quit` do the same from a terminal, and a right-click on the
 picker opens Settings too. On Hyprland the Settings window (class
-`quickaccent-settings`) is floated and centred by a runtime window rule that
-QuickAccent applies at startup and after each config reload; the persistent
+`accent-settings`) is floated and centred by a runtime window rule that
+Accent applies at startup and after each config reload; the persistent
 form for `~/.config/hypr/windows.lua` is
-`hl.window_rule({ match = { class = "quickaccent-settings" }, float = true, center = true })`.
+`hl.window_rule({ match = { class = "accent-settings" }, float = true, center = true })`.
 
 ## Multi-monitor overlay (GNOME)
 
-Wayland hides window positions from apps, so QuickAccent self-installs a
-GNOME Shell extension (`quickaccent-focus@victormasson.github.io`, sources
+Wayland hides window positions from apps, so Accent self-installs a
+GNOME Shell extension (`accent-focus@victormasson.github.io`, sources
 in `dist/linux/gnome-extension/`) that reports the focused window's
-rectangle over D-Bus and adds a top-bar *QuickAccent* menu (*Settings…* /
+rectangle over D-Bus and adds a top-bar *Accent* menu (*Settings…* /
 *Quit*). The picker then opens centered on the window you are typing in —
 i.e. on the right monitor. **Log out/in once** after the first run so GNOME
 loads the extension; until then (and on other desktops) the overlay is
 centered on the primary monitor and there is no panel button. Remove it with
-`gnome-extensions disable quickaccent-focus@victormasson.github.io` and by
+`gnome-extensions disable accent-focus@victormasson.github.io` and by
 deleting its directory under `~/.local/share/gnome-shell/extensions/`.
 Known limitation: with fractional display scaling the position can be offset.
 
@@ -114,7 +114,7 @@ Most direct mechanism first — the clipboard is a last resort only:
 
 | Case | Mechanism |
 |------|-----------|
-| Accent in the keymap — natively, or added by the auto-installed `quickaccent:accents` xkb option (GNOME) | uinput key combo — instant, no authorization, all apps incl. terminals |
+| Accent in the keymap — natively, or added by the auto-installed `accent:accents` xkb option (GNOME) | uinput key combo — instant, no authorization, all apps incl. terminals |
 | Keymap extension unavailable (non-GNOME desktops, slot overflow) | Portal keysym injection — one-time authorization, persisted via restore token. Note: mutter only types keysyms already in the keymap |
 | Portal denied/unavailable | `wl-copy` + virtual Ctrl+V, loudly logged. Terminals treat Ctrl+V literally |
 

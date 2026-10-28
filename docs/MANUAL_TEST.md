@@ -9,7 +9,7 @@ The following needs a real desktop session (permissions + compositor).
 - [ ] User in group `input` + `uinput` module loaded (reboot after `usermod`)
 - [ ] GNOME: startup log says "keyboard layout extended with N accent
       characters"; `gsettings get org.gnome.desktop.input-sources xkb-options`
-      contains `quickaccent:accents`; previous options (e.g. caps:escape) kept
+      contains `accent:accents`; previous options (e.g. caps:escape) kept
 - [ ] No permission dialog at any point; normal typing unaffected after the
       keymap reload
 - [ ] Accents are **typed directly** — clipboard content is untouched after
@@ -36,7 +36,7 @@ The following needs a real desktop session (permissions + compositor).
       centered on the primary monitor
 - [ ] **AZERTY** (or non-QWERTY): accents match the letter typed, not US physical key; punctuation and number triggers use physical US positions
 - [ ] **Special characters & punctuation**: with `Special`, `Currency`, or extensions in `languages`, holding punctuation/number keys (e.g. `-`, `=`, `1`) opens picker with symbols/fractions; combining accents and RTL currency symbols insert cleanly without display helpers
-- [ ] Config hot-reload: edit `~/.config/quickaccent/config.toml` languages without restart
+- [ ] Config hot-reload: edit `~/.config/accent/config.toml` languages without restart
 
 ## macOS
 

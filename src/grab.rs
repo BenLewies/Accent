@@ -237,7 +237,7 @@ mod platform {
                         let held_keycode = mapping_key_to_keycode(held_mk);
                         if !is_key_physically_held(held_keycode) {
                             eprintln!(
-                                "[QuickAccent] Physical key check failed for {:?}, resetting",
+                                "[Accent] Physical key check failed for {:?}, resetting",
                                 held_mk
                             );
                             ctx.state.borrow_mut().force_reset();
@@ -252,7 +252,7 @@ mod platform {
                     .handle_key_press(input, *ctx.shift_held.borrow());
                 if let Some(ref ge) = grab_event {
                     eprintln!(
-                        "[QuickAccent] KeyDown {} -> {:?}, suppress: {}",
+                        "[Accent] KeyDown {} -> {:?}, suppress: {}",
                         keycode_raw, ge, suppress
                     );
                     ctx.tx.send(ge.clone()).ok();
@@ -267,7 +267,7 @@ mod platform {
                     ctx.state.borrow_mut().handle_key_release(input);
                 if let Some(ref ge) = grab_event {
                     eprintln!(
-                        "[QuickAccent] KeyUp {} -> {:?}, suppress: {}",
+                        "[Accent] KeyUp {} -> {:?}, suppress: {}",
                         keycode_raw, ge, suppress
                     );
                     match ge {
@@ -307,8 +307,8 @@ mod platform {
         };
 
         if tap_port.is_null() {
-            eprintln!("[QuickAccent] ERROR: Failed to create CGEventTap.");
-            eprintln!("[QuickAccent] Grant Accessibility permissions to this terminal.");
+            eprintln!("[Accent] ERROR: Failed to create CGEventTap.");
+            eprintln!("[Accent] Grant Accessibility permissions to this terminal.");
             return;
         }
 
@@ -322,7 +322,7 @@ mod platform {
             CGEventTapEnable(tap_port, true);
         }
 
-        eprintln!("[QuickAccent] CGEventTap active. Listening for keys...");
+        eprintln!("[Accent] CGEventTap active. Listening for keys...");
         CFRunLoop::run_current();
     }
 
@@ -523,7 +523,7 @@ mod platform {
         if let Some(c) = code {
             let ev = if pressed { KeyEvt::Press(c) } else { KeyEvt::Release(c) };
             if let Err(e) = virtual_kb::emit(&[ev]) {
-                eprintln!("[QuickAccent] modifier mirror failed: {e}");
+                eprintln!("[Accent] modifier mirror failed: {e}");
             }
         }
     }
@@ -595,7 +595,7 @@ mod platform {
             _ => None,
         };
         if let Some(combo) = single.and_then(xkb_map::combo_for_char) {
-            log::debug!("[QuickAccent] typing {ch:?} via keymap {combo:?} (held shifts {held_shifts:?}, altgr {})", mods.altgr);
+            log::debug!("[Accent] typing {ch:?} via keymap {combo:?} (held shifts {held_shifts:?}, altgr {})", mods.altgr);
             match virtual_kb::emit_combo(
                 combo.code,
                 combo.shift,
@@ -604,7 +604,7 @@ mod platform {
                 mods.altgr,
             ) {
                 Ok(()) => return,
-                Err(e) => eprintln!("[QuickAccent] direct injection failed: {e}"),
+                Err(e) => eprintln!("[Accent] direct injection failed: {e}"),
             }
         }
         match crate::portal_keysym::inject_text_sync(ch) {
@@ -612,14 +612,14 @@ mod platform {
             Err(crate::portal_keysym::InjectError::Timeout) => {
                 // The character may still arrive — injecting through another
                 // path too would double it. Do nothing.
-                eprintln!("[QuickAccent] portal injection timed out; not falling back");
+                eprintln!("[Accent] portal injection timed out; not falling back");
                 return;
             }
             Err(crate::portal_keysym::InjectError::Unavailable(e)) => {
-                eprintln!("[QuickAccent] portal injection unavailable: {e}");
+                eprintln!("[Accent] portal injection unavailable: {e}");
             }
         }
-        log::debug!("[QuickAccent] typing {ch:?} via clipboard fallback");
+        log::debug!("[Accent] typing {ch:?} via clipboard fallback");
         injection::inject_char_fallback(ch.to_string(), held_shifts);
     }
 
@@ -633,8 +633,8 @@ mod platform {
         // keyboard — never grab without it, or we'd eat the user's typing.
         if let Err(e) = virtual_kb::init() {
             eprintln!(
-                "[QuickAccent] virtual keyboard unavailable: {e}\n\
-                 QuickAccent needs /dev/uinput and /dev/input access.\n\
+                "[Accent] virtual keyboard unavailable: {e}\n\
+                 Accent needs /dev/uinput and /dev/input access.\n\
                  Run ./dist/linux/install.sh, ensure you are in the 'input' group\n\
                  (log out/in or reboot), and that the uinput module is loaded\n\
                  (sudo modprobe uinput). Keyboard grabbing is disabled."
@@ -665,19 +665,19 @@ mod platform {
             if ran >= std::time::Duration::from_secs(5) {
                 // It was healthy for a while — a resume/hotplug blip. Retry now.
                 fast_failures = 0;
-                eprintln!("[QuickAccent] input grab dropped after {ran:?}; re-establishing");
+                eprintln!("[Accent] input grab dropped after {ran:?}; re-establishing");
                 continue;
             }
             fast_failures += 1;
             if fast_failures >= 5 {
                 eprintln!(
-                    "[QuickAccent] input grab keeps failing immediately; exiting so the \
+                    "[Accent] input grab keeps failing immediately; exiting so the \
                      service manager can restart it (check the 'input' group and /dev/uinput)"
                 );
                 std::process::exit(1);
             }
             let backoff = std::time::Duration::from_millis(200 * u64::from(fast_failures));
-            eprintln!("[QuickAccent] input grab failed; retrying in {backoff:?}");
+            eprintln!("[Accent] input grab failed; retrying in {backoff:?}");
             std::thread::sleep(backoff);
         }
     }
@@ -750,7 +750,7 @@ mod platform {
                     if let Some(ra) = pending_release.borrow_mut().remove(&c) {
                         if ra == ReleaseAction::EmitVirtualRelease {
                             if let Err(e) = virtual_kb::emit(&[KeyEvt::Release(c)]) {
-                                eprintln!("[QuickAccent] replay failed: {e}");
+                                eprintln!("[Accent] replay failed: {e}");
                             }
                         }
                         return None;
@@ -794,7 +794,7 @@ mod platform {
             // commit injection, then UI.
             if !action.emit.is_empty() {
                 if let Err(e) = virtual_kb::emit(&action.emit) {
-                    eprintln!("[QuickAccent] replay failed: {e}");
+                    eprintln!("[Accent] replay failed: {e}");
                 }
             }
             for (c, ra) in &action.pending {
@@ -826,7 +826,7 @@ mod platform {
         };
 
         if let Err(e) = grab_with_tick(callback, tick) {
-            eprintln!("[QuickAccent] grab error: {e:?}");
+            eprintln!("[Accent] grab error: {e:?}");
         }
     }
 }
@@ -838,11 +838,11 @@ pub fn run_grab_thread(tx: UnboundedSender<GrabEvent>, config: &Config) {
     set_live(input_time_ms, hold_delay_ms, activation_key);
     std::thread::spawn(move || {
         #[cfg(target_os = "macos")]
-        eprintln!("[QuickAccent] Starting grab (grant Accessibility if needed)...");
+        eprintln!("[Accent] Starting grab (grant Accessibility if needed)...");
         #[cfg(target_os = "linux")]
-        eprintln!("[QuickAccent] Starting grab (user must be in group 'input')...");
+        eprintln!("[Accent] Starting grab (user must be in group 'input')...");
         #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-        eprintln!("[QuickAccent] Starting grab...");
+        eprintln!("[Accent] Starting grab...");
         platform::run_grab(tx, input_time_ms, hold_delay_ms, activation_key);
     });
 }

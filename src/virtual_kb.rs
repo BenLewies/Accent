@@ -13,7 +13,7 @@ use std::sync::{Mutex, OnceLock};
 
 pub use crate::state_machine::{KeyEvt, KEY_LEFTCTRL, KEY_RIGHTALT};
 
-pub const DEVICE_NAME: &str = "QuickAccent Virtual Keyboard";
+pub const DEVICE_NAME: &str = "Accent Virtual Keyboard";
 
 static DEVICE: OnceLock<Mutex<VirtualDevice>> = OnceLock::new();
 

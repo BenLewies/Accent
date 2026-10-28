@@ -279,7 +279,7 @@ pub fn setup_status_item() {
         menu.addItem_(settings_item);
         menu.addItem_(NSMenuItem::separatorItem(nil));
 
-        let quit_title = NSString::alloc(nil).init_str("Quit QuickAccent");
+        let quit_title = NSString::alloc(nil).init_str("Quit Accent");
         let q = NSString::alloc(nil).init_str("q");
         let quit_item: id = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
             quit_title,

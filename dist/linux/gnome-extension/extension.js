@@ -1,4 +1,4 @@
-// QuickAccent: focused-window geometry over D-Bus (so the picker opens on
+// Accent: focused-window geometry over D-Bus (so the picker opens on
 // the monitor being typed on) and a top-bar menu like the macOS status item.
 
 import Clutter from 'gi://Clutter';
@@ -11,26 +11,26 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const NODE = `<node>
-<interface name="io.github.victormasson.QuickAccent.FocusedWindow">
+<interface name="io.github.BenLewies.Accent.FocusedWindow">
   <method name="Get">
     <arg type="s" direction="out" name="rect"/>
   </method>
 </interface>
 </node>`;
 
-const APP_BUS = 'io.github.victormasson.QuickAccent';
-const APP_PATH = '/io/github/victormasson/QuickAccent';
-const APP_IFACE = 'io.github.victormasson.QuickAccent';
+const APP_BUS = 'io.github.BenLewies.Accent';
+const APP_PATH = '/io/github/BenLewies/Accent';
+const APP_IFACE = 'io.github.BenLewies.Accent';
 
 const Indicator = GObject.registerClass(
-class QuickAccentIndicator extends PanelMenu.Button {
+class AccentIndicator extends PanelMenu.Button {
     _init() {
-        super._init(0.5, 'QuickAccent');
+        super._init(0.5, 'Accent');
 
         this.add_child(new St.Label({
             text: 'Á',
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'quickaccent-panel-label',
+            style_class: 'accent-panel-label',
         }));
 
         const settings = new PopupMenu.PopupMenuItem('Settings\u2026');
@@ -39,7 +39,7 @@ class QuickAccentIndicator extends PanelMenu.Button {
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        const quit = new PopupMenu.PopupMenuItem('Quit QuickAccent');
+        const quit = new PopupMenu.PopupMenuItem('Quit Accent');
         quit.connect('activate', () => this._call('Quit'));
         this.menu.addMenuItem(quit);
     }
@@ -60,12 +60,12 @@ class QuickAccentIndicator extends PanelMenu.Button {
     }
 });
 
-export default class QuickAccentFocusExtension extends Extension {
+export default class AccentFocusExtension extends Extension {
     enable() {
         this._dbus = Gio.DBusExportedObject.wrapJSObject(NODE, this);
         this._dbus.export(
             Gio.DBus.session,
-            '/io/github/victormasson/QuickAccent/FocusedWindow'
+            '/io/github/BenLewies/Accent/FocusedWindow'
         );
         this._indicator = new Indicator();
         Main.panel.addToStatusArea(this.uuid, this._indicator);

@@ -48,7 +48,7 @@ mod imp {
         thread::spawn(move || {
             while let Ok(paste) = rx.recv() {
                 if let Err(e) = paste_via_clipboard(&paste) {
-                    eprintln!("[QuickAccent] inject failed: {e}");
+                    eprintln!("[Accent] inject failed: {e}");
                 }
             }
         });
@@ -58,9 +58,9 @@ mod imp {
     /// keyboard layout nor the portal can type the character directly.
     pub fn inject_char_fallback(ch: String, held_shifts: Vec<u16>) {
         eprintln!(
-            "[QuickAccent] WARNING: typing {ch:?} via clipboard fallback. \
+            "[Accent] WARNING: typing {ch:?} via clipboard fallback. \
              For direct typing, accept the one-time input-sharing authorization \
-             (restart QuickAccent to be prompted again)."
+             (restart Accent to be prompted again)."
         );
         if let Some(tx) = TX.get() {
             let _ = tx.send(Paste { ch, held_shifts });
@@ -73,7 +73,7 @@ mod imp {
         // Let the focused app read the clipboard before restoring it.
         thread::sleep(Duration::from_millis(150));
         clipboard_restore(prev);
-        result.map(|()| eprintln!("[QuickAccent] injected via clipboard"))
+        result.map(|()| eprintln!("[Accent] injected via clipboard"))
     }
 
     fn press_ctrl_v(held_shifts: &[u16]) -> Result<(), String> {
@@ -199,7 +199,7 @@ mod imp {
             let mut enigo = match Enigo::new(&Settings::default()) {
                 Ok(e) => e,
                 Err(e) => {
-                    eprintln!("[QuickAccent] injection unavailable: {e}");
+                    eprintln!("[Accent] injection unavailable: {e}");
                     while rx.recv().is_ok() {}
                     return;
                 }
@@ -212,7 +212,7 @@ mod imp {
                     Cmd::Space => click_key(&mut enigo, Key::Space),
                 };
                 if let Err(e) = result {
-                    eprintln!("[QuickAccent] inject failed: {e}");
+                    eprintln!("[Accent] inject failed: {e}");
                 }
             }
         });

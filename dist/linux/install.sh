@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Install QuickAccent for the current user (prebuilt binary from GitHub Releases).
+# Install Accent for the current user (prebuilt binary from GitHub Releases).
 set -euo pipefail
 
-REPO="${GITHUB_REPO:-victormasson/QuickAccent}"
-ASSET="quickaccent-linux-x86_64.tar.gz"
+REPO="${GITHUB_REPO:-BenLewies/Accent}"
+ASSET="accent-linux-x86_64.tar.gz"
 SUMS="SHA256SUMS"
 BIN_DIR="${PREFIX:-$HOME/.local}/bin"
 UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
@@ -20,8 +20,8 @@ fi
 # Release to install. Default: the version of the checkout you run this from
 # (so script and asset are the same reviewed tag); `latest` = newest stable,
 # `continuous` = rolling build from master, or any tag such as v1.2.0.
-if [[ -n "${QUICKACCENT_VERSION:-}" ]]; then
-  RELEASE_TAG="$QUICKACCENT_VERSION"
+if [[ -n "${ACCENT_VERSION:-}" ]]; then
+  RELEASE_TAG="$ACCENT_VERSION"
 elif [[ -n "$ROOT" && -f "$ROOT/Cargo.toml" ]]; then
   RELEASE_TAG="v$(sed -n 's/^version = "\(.*\)"/\1/p' "$ROOT/Cargo.toml" | head -1)"
 else
@@ -60,16 +60,16 @@ download() {
 }
 
 # The archive is only extracted after its sha256 matches the SHA256SUMS file
-# published with the release. QUICKACCENT_SKIP_VERIFY=1 bypasses this for
+# published with the release. ACCENT_SKIP_VERIFY=1 bypasses this for
 # releases older than v1.2.0, which shipped no checksum file.
 verify_release() {
-  if [[ "${QUICKACCENT_SKIP_VERIFY:-0}" == "1" ]]; then
-    echo "warning: QUICKACCENT_SKIP_VERIFY=1, checksum not verified" >&2
+  if [[ "${ACCENT_SKIP_VERIFY:-0}" == "1" ]]; then
+    echo "warning: ACCENT_SKIP_VERIFY=1, checksum not verified" >&2
     return 0
   fi
   if ! download "$(release_url "$SUMS")" "$tmpdir/$SUMS"; then
     echo "error: $SUMS not found for $RELEASE_TAG; refusing to install an unverified asset." >&2
-    echo "       (QUICKACCENT_SKIP_VERIFY=1 to override for pre-1.2.0 releases)" >&2
+    echo "       (ACCENT_SKIP_VERIFY=1 to override for pre-1.2.0 releases)" >&2
     exit 1
   fi
   echo "==> Verify sha256"
@@ -100,13 +100,13 @@ build_from_source() {
   command -v cargo >/dev/null || { echo "error: install Rust (https://rustup.rs/)" >&2; exit 1; }
   (cd "$ROOT" && cargo build --release)
   mkdir -p "$tmpdir/pkg"
-  cp "$ROOT/target/release/quickaccent" "$tmpdir/pkg/"
-  cp "$ROOT/dist/linux/quickaccent.service" "$tmpdir/pkg/" 2>/dev/null || true
-  cp "$ROOT/dist/linux/quickaccent.desktop" "$tmpdir/pkg/" 2>/dev/null || true
-  cp "$ROOT/dist/linux/60-quickaccent.rules" "$tmpdir/pkg/" 2>/dev/null || true
-  cp "$ROOT/assets/icon-app.svg" "$tmpdir/pkg/quickaccent.svg" 2>/dev/null || true
-  cp "$ROOT/assets/icon-app-256.png" "$tmpdir/pkg/quickaccent-256.png" 2>/dev/null || true
-  cp "$ROOT/assets/icon-app-512.png" "$tmpdir/pkg/quickaccent-512.png" 2>/dev/null || true
+  cp "$ROOT/target/release/accent" "$tmpdir/pkg/"
+  cp "$ROOT/dist/linux/accent.service" "$tmpdir/pkg/" 2>/dev/null || true
+  cp "$ROOT/dist/linux/accent.desktop" "$tmpdir/pkg/" 2>/dev/null || true
+  cp "$ROOT/dist/linux/60-accent.rules" "$tmpdir/pkg/" 2>/dev/null || true
+  cp "$ROOT/assets/icon-app.svg" "$tmpdir/pkg/accent.svg" 2>/dev/null || true
+  cp "$ROOT/assets/icon-app-256.png" "$tmpdir/pkg/accent-256.png" 2>/dev/null || true
+  cp "$ROOT/assets/icon-app-512.png" "$tmpdir/pkg/accent-512.png" 2>/dev/null || true
 }
 
 if [[ "${INSTALL_FROM_SOURCE:-0}" == "1" ]]; then
@@ -115,8 +115,8 @@ if [[ "${INSTALL_FROM_SOURCE:-0}" == "1" ]]; then
 else
   if fetch_release; then
     tar -xzf "$tmpdir/$ASSET" -C "$tmpdir"
-    PKG="$(find "$tmpdir" -maxdepth 1 -type d -name 'quickaccent-linux-*' | head -1)"
-    [[ -n "$PKG" && -x "$PKG/quickaccent" ]] || { echo "error: unexpected archive layout" >&2; exit 1; }
+    PKG="$(find "$tmpdir" -maxdepth 1 -type d -name 'accent-linux-*' | head -1)"
+    [[ -n "$PKG" && -x "$PKG/accent" ]] || { echo "error: unexpected archive layout" >&2; exit 1; }
   else
     echo "warning: download failed; falling back to source build" >&2
     build_from_source
@@ -127,68 +127,68 @@ fi
 echo "==> Install binary + desktop files"
 mkdir -p "$BIN_DIR" "$UNIT_DIR" "$APP_DIR" \
   "$ICON_BASE/scalable/apps" "$ICON_BASE/256x256/apps" "$ICON_BASE/512x512/apps"
-install -m 755 "$PKG/quickaccent" "$BIN_DIR/quickaccent"
+install -m 755 "$PKG/accent" "$BIN_DIR/accent"
 
 ICON_INSTALLED=""
-if [[ -f "$PKG/quickaccent.svg" ]]; then
-  install -m 644 "$PKG/quickaccent.svg" "$ICON_BASE/scalable/apps/quickaccent.svg"
-  ICON_INSTALLED="$ICON_BASE/scalable/apps/quickaccent.svg"
+if [[ -f "$PKG/accent.svg" ]]; then
+  install -m 644 "$PKG/accent.svg" "$ICON_BASE/scalable/apps/accent.svg"
+  ICON_INSTALLED="$ICON_BASE/scalable/apps/accent.svg"
 elif [[ -n "${ROOT:-}" && -f "$ROOT/assets/icon-app.svg" ]]; then
-  install -m 644 "$ROOT/assets/icon-app.svg" "$ICON_BASE/scalable/apps/quickaccent.svg"
-  ICON_INSTALLED="$ICON_BASE/scalable/apps/quickaccent.svg"
+  install -m 644 "$ROOT/assets/icon-app.svg" "$ICON_BASE/scalable/apps/accent.svg"
+  ICON_INSTALLED="$ICON_BASE/scalable/apps/accent.svg"
 fi
-if [[ -f "$PKG/quickaccent-256.png" ]]; then
-  install -m 644 "$PKG/quickaccent-256.png" "$ICON_BASE/256x256/apps/quickaccent.png"
+if [[ -f "$PKG/accent-256.png" ]]; then
+  install -m 644 "$PKG/accent-256.png" "$ICON_BASE/256x256/apps/accent.png"
 elif [[ -n "${ROOT:-}" && -f "$ROOT/assets/icon-app-256.png" ]]; then
-  install -m 644 "$ROOT/assets/icon-app-256.png" "$ICON_BASE/256x256/apps/quickaccent.png"
+  install -m 644 "$ROOT/assets/icon-app-256.png" "$ICON_BASE/256x256/apps/accent.png"
 fi
-if [[ -f "$PKG/quickaccent-512.png" ]]; then
-  install -m 644 "$PKG/quickaccent-512.png" "$ICON_BASE/512x512/apps/quickaccent.png"
+if [[ -f "$PKG/accent-512.png" ]]; then
+  install -m 644 "$PKG/accent-512.png" "$ICON_BASE/512x512/apps/accent.png"
 elif [[ -n "${ROOT:-}" && -f "$ROOT/assets/icon-app-512.png" ]]; then
-  install -m 644 "$ROOT/assets/icon-app-512.png" "$ICON_BASE/512x512/apps/quickaccent.png"
+  install -m 644 "$ROOT/assets/icon-app-512.png" "$ICON_BASE/512x512/apps/accent.png"
 fi
-if [[ -z "$ICON_INSTALLED" && -f "$ICON_BASE/256x256/apps/quickaccent.png" ]]; then
-  ICON_INSTALLED="$ICON_BASE/256x256/apps/quickaccent.png"
+if [[ -z "$ICON_INSTALLED" && -f "$ICON_BASE/256x256/apps/accent.png" ]]; then
+  ICON_INSTALLED="$ICON_BASE/256x256/apps/accent.png"
 fi
 
-if [[ -f "$PKG/quickaccent.service" ]]; then
+if [[ -f "$PKG/accent.service" ]]; then
   # Point ExecStart at installed binary
-  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/quickaccent|" "$PKG/quickaccent.service" \
-    > "$UNIT_DIR/quickaccent.service"
-elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/quickaccent.service" ]]; then
-  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/quickaccent|" "$ROOT/dist/linux/quickaccent.service" \
-    > "$UNIT_DIR/quickaccent.service"
+  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent|" "$PKG/accent.service" \
+    > "$UNIT_DIR/accent.service"
+elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/accent.service" ]]; then
+  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent|" "$ROOT/dist/linux/accent.service" \
+    > "$UNIT_DIR/accent.service"
 fi
 
 DESKTOP_SRC=""
-if [[ -f "$PKG/quickaccent.desktop" ]]; then
-  DESKTOP_SRC="$PKG/quickaccent.desktop"
-elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/quickaccent.desktop" ]]; then
-  DESKTOP_SRC="$ROOT/dist/linux/quickaccent.desktop"
+if [[ -f "$PKG/accent.desktop" ]]; then
+  DESKTOP_SRC="$PKG/accent.desktop"
+elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/accent.desktop" ]]; then
+  DESKTOP_SRC="$ROOT/dist/linux/accent.desktop"
 fi
 if [[ -n "$DESKTOP_SRC" ]]; then
-  sed "s|^Exec=quickaccent|Exec=$BIN_DIR/quickaccent|" "$DESKTOP_SRC" > "$APP_DIR/quickaccent.desktop"
+  sed "s|^Exec=accent|Exec=$BIN_DIR/accent|" "$DESKTOP_SRC" > "$APP_DIR/accent.desktop"
   if [[ -n "$ICON_INSTALLED" ]]; then
-    sed -i "s|^Icon=.*|Icon=$ICON_INSTALLED|" "$APP_DIR/quickaccent.desktop"
+    sed -i "s|^Icon=.*|Icon=$ICON_INSTALLED|" "$APP_DIR/accent.desktop"
   fi
   gtk-update-icon-cache -f -t "$ICON_BASE" 2>/dev/null || true
   update-desktop-database "$APP_DIR" 2>/dev/null || true
 fi
 
 RULE_SRC=""
-if [[ -f "$PKG/60-quickaccent.rules" ]]; then
-  RULE_SRC="$PKG/60-quickaccent.rules"
-elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/60-quickaccent.rules" ]]; then
-  RULE_SRC="$ROOT/dist/linux/60-quickaccent.rules"
+if [[ -f "$PKG/60-accent.rules" ]]; then
+  RULE_SRC="$PKG/60-accent.rules"
+elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/60-accent.rules" ]]; then
+  RULE_SRC="$ROOT/dist/linux/60-accent.rules"
 fi
 
 if [[ -n "$RULE_SRC" ]] && command -v sudo >/dev/null 2>&1; then
   echo "==> udev + uinput module + input group (sudo)"
-  sudo install -m 644 "$RULE_SRC" /etc/udev/rules.d/60-quickaccent.rules
+  sudo install -m 644 "$RULE_SRC" /etc/udev/rules.d/60-accent.rules
   sudo udevadm control --reload-rules || true
   sudo udevadm trigger || true
 
-  # uinput must be loaded at boot: QuickAccent types through a virtual
+  # uinput must be loaded at boot: Accent types through a virtual
   # keyboard (no desktop portal needed).
   echo uinput | sudo tee /etc/modules-load.d/uinput.conf >/dev/null
   sudo modprobe uinput || true
@@ -205,16 +205,16 @@ fi
 
 if command -v systemctl >/dev/null 2>&1; then
   systemctl --user daemon-reload || true
-  systemctl --user enable --now quickaccent.service || true
+  systemctl --user enable --now accent.service || true
 fi
 
 echo
-echo "Installed $BIN_DIR/quickaccent"
+echo "Installed $BIN_DIR/accent"
 echo "  • group 'input' can read all keyboards — trusted users only"
 echo "  • accents your layout lacks are added to the keymap automatically"
-echo "    (xkb option quickaccent:accents in ~/.config/xkb) — no prompts"
+echo "    (xkb option accent:accents in ~/.config/xkb) — no prompts"
 if [[ "${NEED_RELOGIN:-0}" -eq 1 ]]; then
   echo "  • reboot so group 'input' applies to systemd --user (logout is not enough)"
 else
-  echo "  • start: systemctl --user restart quickaccent.service"
+  echo "  • start: systemctl --user restart accent.service"
 fi

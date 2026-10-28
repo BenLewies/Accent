@@ -1,89 +1,119 @@
-// QuickAccent bar widget for the Omarchy shell.
-//
-// Self-contained on purpose: it only shells out to `systemctl --user`, so it
-// makes no assumptions about the shell's internal service API. QuickAccent
-// itself is a standalone daemon (evdev grab + uinput injection) — this widget
-// only shows and toggles it.
-
 import QtQuick
+import QtQuick.Controls as Controls
 import Quickshell
 import Quickshell.Io
+import qs.Commons
+import qs.Ui
 
-Item {
-  id: root
-
-  // Injected by the shell; unused here but part of the plugin contract.
-  property var shell: null
-
-  // "active" while the daemon runs, anything else (inactive/failed/unknown)
-  // means accents are not armed.
-  property string status: "unknown"
-  readonly property bool running: status === "active"
-  readonly property bool installed: status !== "missing"
-
-  implicitWidth: label.implicitWidth
-  implicitHeight: label.implicitHeight
-
-  Text {
-    id: label
-    anchors.centerIn: parent
-    // The app's own mark: a Q with an accent bar.
-    text: "Q̄"
-    font.pixelSize: 14
-    color: root.running ? "#F0C400" : "#6E6E6E"
-    opacity: root.installed ? 1.0 : 0.4
-  }
-
-  MouseArea {
-    anchors.fill: parent
-    hoverEnabled: true
-    acceptedButtons: Qt.LeftButton
-    onClicked: root.toggle()
-  }
-
-  function refresh() {
-    if (!statusProc.running)
-      statusProc.running = true
-  }
-
-  function toggle() {
-    if (controlProc.running)
-      return
-    controlProc.command = ["systemctl", "--user",
-                           root.running ? "stop" : "start",
-                           "quickaccent.service"]
-    controlProc.running = true
-  }
-
-  Process {
-    id: statusProc
-    command: ["systemctl", "--user", "is-active", "quickaccent.service"]
-    stdout: StdioCollector {
-      onStreamFinished: {
-        var value = (text || "").trim()
-        root.status = value.length > 0 ? value : "missing"
-      }
+BarWidget {
+    id: root
+    moduleName: "bjl.accent"
+    property string serviceState: "unknown"
+    property bool autostart: false
+    property string error: ""
+    property bool menuOpen: false
+    property string response: ""
+    readonly property bool running: serviceState === "active"
+    implicitWidth: button.implicitWidth
+    implicitHeight: button.implicitHeight
+    function close() { menuOpen = false }
+    function request(action) {
+        if (control.running) return
+        response = ""
+        control.command = ["python3", "-B", Qt.resolvedUrl("control.py").toString().replace("file://", ""), action]
+        control.running = true
     }
-  }
-
-  Process {
-    id: controlProc
-    onExited: settle.restart()
-  }
-
-  // systemd needs a moment before is-active reflects the change.
-  Timer {
-    id: settle
-    interval: 400
-    onTriggered: root.refresh()
-  }
-
-  Timer {
-    interval: 5000
-    running: true
-    repeat: true
-    onTriggered: root.refresh()
-  }
-
-  Component.onCompleted: refresh()
+    IpcHandler {
+        target: "bjl.accent"
+        function status(): string { return JSON.stringify({state: root.serviceState, autostart: root.autostart, error: root.error}) }
+        function settings(): void { root.request("settings") }
+        function menu(): void { root.menuOpen = !root.menuOpen }
+    }
+    Process {
+        id: control
+        stdout: StdioCollector { onStreamFinished: root.response = text }
+        onExited: function(code) {
+            try {
+                var result = JSON.parse(root.response)
+                root.error = result.error || ""
+                if (result.state !== undefined) root.serviceState = result.state
+                if (result.autostart !== undefined) root.autostart = result.autostart
+            } catch (e) { root.error = "Could not read Accent service status" }
+        }
+    }
+    Timer {
+        interval: 5000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.request("status")
+    }
+    WidgetButton {
+        id: button
+        anchors.fill: parent
+        bar: root.bar
+        text: "Á"
+        dimmed: !root.running
+        tooltipText: "Accent — " + (root.running ? "running" : root.serviceState)
+                     + "\nClick: settings · Right-click: controls"
+                     + (root.error ? "\n" + root.error : "")
+        onPressed: function(mouseButton) {
+            if (mouseButton === Qt.RightButton) root.menuOpen = !root.menuOpen
+            else if (mouseButton === Qt.LeftButton) root.request("settings")
+        }
+    }
+    KeyboardPanel {
+        anchorItem: button
+        bar: root.bar
+        owner: root
+        open: root.menuOpen
+        contentWidth: Style.space(250)
+        contentHeight: actions.implicitHeight
+        focusTarget: actions
+        Column {
+            id: actions
+            width: parent.width
+            spacing: Style.space(6)
+            Keys.onEscapePressed: root.close()
+            Text {
+                text: "Accent · " + (root.running ? "Running" : root.serviceState)
+                color: Color.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+            }
+            Repeater {
+                model: [
+                    {label: "Settings…", action: "settings"},
+                    {label: root.running ? "Pause Accent" : "Start Accent", action: root.running ? "stop" : "start"},
+                    {label: "Restart Accent", action: "restart"},
+                    {label: root.autostart ? "Disable automatic startup" : "Enable automatic startup", action: root.autostart ? "disable" : "enable"}
+                ]
+                delegate: Controls.Button {
+                    required property var modelData
+                    width: actions.width
+                    enabled: !control.running
+                    text: modelData.label
+                    contentItem: Text {
+                        text: parent.text
+                        color: Color.foreground
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.body
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? Color.selection : Color.background
+                        radius: Style.space(4)
+                    }
+                    onClicked: { root.request(modelData.action); root.close() }
+                }
+            }
+            Text {
+                width: parent.width
+                visible: root.error.length > 0
+                text: root.error
+                wrapMode: Text.Wrap
+                color: Color.foreground
+            }
+        }
+    }
 }

@@ -4,9 +4,9 @@ Approved: macOS-style panel menu (Settings… / Quit); keep System/Light/Dark + 
 
 ## 1. GNOME panel + D-Bus
 
-- `dist/linux/gnome-extension/extension.js`: keep FocusedWindow D-Bus; add `PanelMenu.Button` (`Q̄`), menu Settings… / Quit calling `io.github.victormasson.QuickAccent`.
-- `metadata.json`: name **QuickAccent**, description covers the menu.
-- New `src/dbus_service.rs`: zbus export `OpenSettings` / `Quit` on `/io/github/victormasson/QuickAccent`.
+- `dist/linux/gnome-extension/extension.js`: keep FocusedWindow D-Bus; add `PanelMenu.Button` (`Q̄`), menu Settings… / Quit calling `io.github.BenLewies.Accent`.
+- `metadata.json`: name **Accent**, description covers the menu.
+- New `src/dbus_service.rs`: zbus export `OpenSettings` / `Quit` on `/io/github/BenLewies/Accent`.
 - `src/app.rs`: `UiEvent::Quit` → `iced::exit()`.
 - `src/main.rs`: `mod dbus_service`; `dbus_service::start()` on Linux at startup.
 - `src/shell_ext.rs`: on file change, `gnome-extensions disable` then `enable` to reload.
@@ -33,10 +33,10 @@ Approved: macOS-style panel menu (Settings… / Quit); keep System/Light/Dark + 
 
 ```bash
 # after commit + push master, wait for Release workflow
-QUICKACCENT_VERSION=continuous ./dist/linux/install.sh
-systemctl --user restart quickaccent.service
+ACCENT_VERSION=continuous ./dist/linux/install.sh
+systemctl --user restart accent.service
 ```
 
-Must set `QUICKACCENT_VERSION=continuous` (checkout is still 1.2.0). Then disable/enable the GNOME extension (or log out) so the top-bar item loads.
+Must set `ACCENT_VERSION=continuous` (checkout is still 1.2.0). Then disable/enable the GNOME extension (or log out) so the top-bar item loads.
 
 No version bump, no `v*` tag, no AUR update.

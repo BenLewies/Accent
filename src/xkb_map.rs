@@ -70,7 +70,7 @@ fn compile_keymap(layout: &str, variant: &str, options: Option<String>) -> Optio
 }
 
 /// The xkb options the session applies: env override, else the desktop's
-/// setting (includes our `quickaccent:accents` once installed).
+/// setting (includes our `accent:accents` once installed).
 fn active_options() -> Option<String> {
     if let Ok(opts) = std::env::var("XKB_DEFAULT_OPTIONS") {
         return Some(opts);
@@ -85,9 +85,9 @@ fn compile_active_keymap() -> Option<xkb::Keymap> {
     let (layout, variant) = active_layout_variant();
 
     if variant.is_empty() {
-        eprintln!("[QuickAccent] XKB layout: {layout}");
+        eprintln!("[Accent] XKB layout: {layout}");
     } else {
-        eprintln!("[QuickAccent] XKB layout: {layout} ({variant})");
+        eprintln!("[Accent] XKB layout: {layout} ({variant})");
     }
 
     compile_keymap(&layout, &variant, active_options())
@@ -173,7 +173,7 @@ fn build_map() -> HashMap<MappingKey, MappingKey> {
         LETTERS.into_iter().map(|k| (k, k)).collect();
 
     let Some(keymap) = compile_active_keymap() else {
-        eprintln!("[QuickAccent] XKB keymap failed; using physical keys");
+        eprintln!("[Accent] XKB keymap failed; using physical keys");
         return map;
     };
     let state = xkb::State::new(&keymap);

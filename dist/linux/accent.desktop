@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=QuickAccent
+Name=Accent
 Comment=Hold a letter, press Space, pick an accent character
-Exec=quickaccent
-Icon=quickaccent
+Exec=accent
+Icon=accent
 Terminal=false
 Categories=Utility;Accessibility;
 StartupNotify=false
@@ -13,8 +13,8 @@ Actions=Settings;Quit;
 
 [Desktop Action Settings]
 Name=Settings
-Exec=quickaccent --settings
+Exec=accent --settings
 
 [Desktop Action Quit]
-Name=Quit QuickAccent
-Exec=quickaccent --quit
+Name=Quit Accent
+Exec=accent --quit

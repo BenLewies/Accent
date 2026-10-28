@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to QuickAccent are documented here.
+All notable changes to Accent are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   A new `/dev/input` node is created `root:root 0600` and only then handed
   to group `input` by udev; the grab tried to open it on creation, lost that
   race and never retried, so a power-cycled or Bluetooth keyboard typed
-  plain letters until QuickAccent was restarted. Nodes are now retried when
+  plain letters until Accent was restarted. Nodes are now retried when
   udev changes their permissions, and the clone of a keyboard that goes
   away is destroyed instead of lingering as a ghost device.
 - **Some accents never appeared in Chromium apps (Brave, VS Code, Teams…).**
@@ -47,15 +47,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   in `config.toml` (and two pick lists under *Appearance* in Settings while
   *System* is selected) choose which palette a light or dark desktop maps
   to, e.g. Rosé Pine Dawn by day and Catppuccin Mocha by night.
-- **Settings without a panel icon.** Launching QuickAccent while the daemon
+- **Settings without a panel icon.** Launching Accent while the daemon
   runs now opens its Settings window over D-Bus instead of exiting with
   "already running", so the launcher or dock entry works as the settings
   menu on Hyprland and other desktops without the GNOME top-bar menu. The
-  desktop entry gains *Settings* and *Quit QuickAccent* actions,
-  `quickaccent --settings` / `--quit` do the same from a terminal, and a
+  desktop entry gains *Settings* and *Quit Accent* actions,
+  `accent --settings` / `--quit` do the same from a terminal, and a
   right-click on the picker opens Settings.
-- **GNOME top-bar menu.** The helper Shell extension now shows a *QuickAccent*
-  panel button with *Settings…* and *Quit QuickAccent*, matching the macOS
+- **GNOME top-bar menu.** The helper Shell extension now shows a *Accent*
+  panel button with *Settings…* and *Quit Accent*, matching the macOS
   menu-bar item. Settings and quit go over D-Bus to the running daemon.
 - **Named palettes.** Appearance in Settings is a theme selector: System /
   Light / Dark, plus Dracula, Catppuccin (Latte, Frappé, Macchiato, Mocha)
@@ -71,10 +71,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **Daemon could silently lose its D-Bus name.** zbus requests names with
-  replace-existing by default, so any second `quickaccent` process took the
+  replace-existing by default, so any second `accent` process took the
   name and, once gone, left the daemon unreachable for `--settings` and the
   GNOME menu. The daemon now refuses replacement and keeps retrying the claim
-  while a previous instance is still shutting down; `QUICKACCENT_DEMO`
+  while a previous instance is still shutting down; `ACCENT_DEMO`
   instances no longer touch the bus or the single-instance lock.
 - **Hyprland: overlay missing or misplaced on some monitors.** The overlay is
   an X11 window, but Hyprland lays XWayland monitors out on its own terms
@@ -94,9 +94,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Verifiable Linux releases and an AUR package.** Releases now ship
   `SHA256SUMS` and a Sigstore build-provenance attestation per archive
-  (`gh attestation verify <asset> --repo victormasson/QuickAccent`), and the
+  (`gh attestation verify <asset> --repo BenLewies/Accent`), and the
   Linux tarball carries the license. `dist/arch/` packages the tarball as
-  `quickaccent-bin` (sha256-pinned; binary, user unit, udev rule,
+  `accent-bin` (sha256-pinned; binary, user unit, udev rule,
   `modules-load.d` entry, desktop file and icons under `/usr`). The Omarchy
   plugin README installs the daemon from the AUR instead of piping a script
   to `bash`, which the Omarchy plugin marketplace rejects.
@@ -110,7 +110,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   Dark, `theme = "..."` in `config.toml`) for the picker and the settings
   window. Changes apply immediately and rewrite only the affected line of
   `config.toml`, keeping your comments and other settings.
-- `QUICKACCENT_DEMO=overlay|settings` opens that window at startup without
+- `ACCENT_DEMO=overlay|settings` opens that window at startup without
   taking the keyboard grab — for screenshots and UI work.
 
 ### Changed
@@ -120,7 +120,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   run from, check it against `SHA256SUMS` (and the attestation when `gh` is
   logged in) and refuse to continue on a mismatch. `curl | bash` is no longer
   documented anywhere; clone the tag and run the script. The shipped systemd
-  unit defaults to `/usr/bin/quickaccent` (the user-local installer still
+  unit defaults to `/usr/bin/accent` (the user-local installer still
   rewrites `ExecStart`).
 
 ### Fixed
@@ -134,7 +134,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   for its focused window.
 - **macOS: Accessibility grant never applied.** The release `.app` shipped
   without a bundle-level code signature, so TCC had no stable requirement to
-  bind the grant to — toggling QuickAccent on in Accessibility did nothing and
+  bind the grant to — toggling Accent on in Accessibility did nothing and
   duplicate entries accumulated. The release workflow, installer and brew
   formula now ad-hoc sign the bundle. Launchers (brew service, LaunchAgent
   template) start the app via `open -a` instead of exec'ing the binary, which
@@ -143,7 +143,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.1.1] - 2026-09-02
 
 Fixes for Omarchy 4 / Hyprland reported in
-[#9](https://github.com/victormasson/QuickAccent/issues/9).
+[#9](https://github.com/BenLewies/Accent/issues/9).
 
 ### Fixed
 
@@ -175,7 +175,7 @@ Fixes for Omarchy 4 / Hyprland reported in
   carried forward, and success is decided solely by reading the value back.
   On failure the exact `input.lua` line — with the merged value — is logged.
 - **Option lost on config reload.** Omarchy reloads Hyprland on every theme
-  change, dropping runtime-set options. QuickAccent now watches Hyprland's
+  change, dropping runtime-set options. Accent now watches Hyprland's
   event socket and re-applies the option after each `configreloaded`.
 - **Dead-end portal advice.** The RemoteDesktop tier is only started when a
   portal backend actually implements it (Hyprland's does not); otherwise the
@@ -184,17 +184,17 @@ Fixes for Omarchy 4 / Hyprland reported in
 - **Accents committed into the picker instead of the app (Hyprland).** The
   overlay is a native-Wayland toplevel, so its X11 `override_redirect`
   focus-proofing did nothing on Hyprland — the compositor gave the overlay
-  keyboard focus and the accent landed in it, not your document. QuickAccent
+  keyboard focus and the accent landed in it, not your document. Accent
   now sets a `no_focus` window rule for the overlay via `hyprctl`, at startup
   and on every config reload. GNOME is unaffected (overlay runs on XWayland).
-- **Lost Shift on accent-capable letters (Hyprland).** Letters QuickAccent
+- **Lost Shift on accent-capable letters (Hyprland).** Letters Accent
   replays go through its own virtual keyboard; Hyprland reports the emitting
   device's modifier state, so with Shift held on the physical keyboard the
   replayed vowels came out lowercase (`uPeRcaseS`). Shift/Ctrl/Alt/Meta/AltGr
   events are now mirrored onto the virtual keyboard as they pass through. Caps
   Lock is intentionally not mirrored (its action toggles on press); Caps Lock
   with accent letters on Hyprland remains a known gap.
-- **Duplicate instances.** Launching QuickAccent from the app grid while the
+- **Duplicate instances.** Launching Accent from the app grid while the
   systemd service runs produced a second copy that silently lost the evdev
   grab (`EBUSY`), and the two were indistinguishable. A second instance now
   exits with "already running"; when the service itself starts and finds a
@@ -210,7 +210,7 @@ Omarchy / Hyprland support.
   accents typeable on layouts without them (`é` on US) is now enabled with
   `hyprctl keyword input:kb_options` instead of GNOME's gsettings. It applies
   immediately — no re-login — and `hyprland.conf` is left untouched, because
-  QuickAccent re-applies the option on every start.
+  Accent re-applies the option on every start.
 - The keyboard layout and xkb options are read from Hyprland
   (`input:kb_layout` / `kb_variant` / `kb_options`) when it is the compositor,
   ahead of the GNOME and `localectl` sources.
@@ -223,7 +223,7 @@ Omarchy / Hyprland support.
 
 ## [1.0.0] - 2026-08-18
 
-First stable release. QuickAccent brings macOS-style press-and-hold accent
+First stable release. Accent brings macOS-style press-and-hold accent
 picking to Linux and macOS: hold a letter, press Space, pick a variant,
 release to insert.
 
@@ -237,7 +237,7 @@ release to insert.
   press-and-hold, so there is no character to delete and no cursor jump.
 - **Shift** switches the overlay between lower- and uppercase variants live.
 - **37 languages**, merged and hot-reloaded from
-  `~/.config/quickaccent/config.toml` without restarting.
+  `~/.config/accent/config.toml` without restarting.
 
 ### Linux
 
@@ -246,7 +246,7 @@ release to insert.
   app — native Wayland, XWayland, Electron and terminals alike.
 - **Characters missing from your keyboard layout** (`é` on US, `É` on AZERTY…)
   are added to the keymap at startup through a generated XKB option
-  (`quickaccent:accents` in `~/.config/xkb`); existing options are preserved.
+  (`accent:accents` in `~/.config/xkb`); existing options are preserved.
 - **The picker follows the monitor you are typing on** (GNOME) via a
   self-installed micro shell extension that reports the focused window.
 - **Layout aware** — AZERTY, QWERTZ, Dvorak and friends resolve accents by the
@@ -282,6 +282,6 @@ release to insert.
 - The overlay is centered rather than placed at the caret — Wayland
   compositors do not expose caret position to applications.
 
-[1.1.1]: https://github.com/victormasson/QuickAccent/releases/tag/v1.1.1
-[1.1.0]: https://github.com/victormasson/QuickAccent/releases/tag/v1.1.0
-[1.0.0]: https://github.com/victormasson/QuickAccent/releases/tag/v1.0.0
+[1.1.1]: https://github.com/BenLewies/Accent/releases/tag/v1.1.1
+[1.1.0]: https://github.com/BenLewies/Accent/releases/tag/v1.1.0
+[1.0.0]: https://github.com/BenLewies/Accent/releases/tag/v1.0.0

@@ -1,6 +1,6 @@
 # Character sets
 
-Enable the sets you want in `~/.config/quickaccent/config.toml`:
+Enable the sets you want in `~/.config/accent/config.toml`:
 
 ```toml
 languages = ["French", "Special", "Currency", "Typography", "Arrows", "Math", "CurrencyExtended"]
@@ -128,7 +128,7 @@ Your editor controls right-to-left paragraph direction and font support.
 
 ## Cherokee, Osage, and Canadian syllabics
 
-Enable any of these five independent sets in `~/.config/quickaccent/config.toml`:
+Enable any of these five independent sets in `~/.config/accent/config.toml`:
 
 ```toml
 languages = [

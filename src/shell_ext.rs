@@ -1,5 +1,5 @@
 //! GNOME Shell helper extension: on Wayland only the compositor knows window
-//! geometry, so QuickAccent self-installs a micro-extension (see
+//! geometry, so Accent self-installs a micro-extension (see
 //! dist/linux/gnome-extension/) that reports the focused window's frame rect
 //! over D-Bus and shows a top-bar menu (Settings… / Quit). Used to show the
 //! accent picker on the monitor being typed on; everything degrades to the
@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-pub const UUID: &str = "quickaccent-focus@victormasson.github.io";
+pub const UUID: &str = "accent-focus@victormasson.github.io";
 const EXTENSION_JS: &str = include_str!("../dist/linux/gnome-extension/extension.js");
 const METADATA_JSON: &str = include_str!("../dist/linux/gnome-extension/metadata.json");
 const STYLESHEET_CSS: &str = include_str!("../dist/linux/gnome-extension/stylesheet.css");
@@ -41,7 +41,7 @@ pub fn ensure_installed() {
         let path = dir.join(name);
         if std::fs::read_to_string(&path).ok().as_deref() != Some(content) {
             if let Err(e) = crate::xkb_custom::write_file(&path, content) {
-                eprintln!("[QuickAccent] cannot install shell extension: {e}");
+                eprintln!("[Accent] cannot install shell extension: {e}");
                 return;
             }
             changed = true;
@@ -66,7 +66,7 @@ pub fn ensure_installed() {
         .status();
     if changed && focused_window_rect().is_none() {
         eprintln!(
-            "[QuickAccent] shell extension installed — log out/in once so the \
+            "[Accent] shell extension installed — log out/in once so the \
              top-bar menu appears and the accent picker can follow the monitor \
              you type on"
         );
@@ -84,7 +84,7 @@ fn ensure_enabled_setting() {
     }
     list.push(UUID.to_string());
     if !crate::xkb_custom::gsettings_set_list("org.gnome.shell", "enabled-extensions", &list) {
-        eprintln!("[QuickAccent] could not enable the shell extension in GNOME settings");
+        eprintln!("[Accent] could not enable the shell extension in GNOME settings");
     }
 }
 
@@ -115,8 +115,8 @@ fn gnome_focused_window_rect() -> Option<Rect> {
     let reply = conn
         .call_method(
             Some("org.gnome.Shell"),
-            "/io/github/victormasson/QuickAccent/FocusedWindow",
-            Some("io.github.victormasson.QuickAccent.FocusedWindow"),
+            "/io/github/BenLewies/Accent/FocusedWindow",
+            Some("io.github.BenLewies.Accent.FocusedWindow"),
             "Get",
             &(),
         )
@@ -161,6 +161,6 @@ mod tests {
         assert!(METADATA_JSON.contains(UUID));
         assert!(EXTENSION_JS.contains("FocusedWindow"));
         assert!(EXTENSION_JS.contains("OpenSettings"));
-        assert!(EXTENSION_JS.contains("Quit QuickAccent"));
+        assert!(EXTENSION_JS.contains("Quit Accent"));
     }
 }
