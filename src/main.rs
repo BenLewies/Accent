@@ -37,11 +37,12 @@ Usage: accent [OPTIONS]
 Options:
   -h, --help       Print this help
   -V, --version    Print version
+      --daemon     Start quietly in the background (used by the service)
       --settings   Open the Settings window of the running daemon (Linux)
       --quit       Stop the running daemon (Linux)
 
-Launching accent while the daemon is already running opens its
-Settings window, so a launcher or dock entry doubles as the settings menu.
+Use accent --settings or the Á bar widget to open settings.
+Service starts and repeated background launches never open settings.
 
 Runs as a background daemon: no window is shown until the picker opens.
 Config: ~/.config/accent/config.toml (hot-reloaded)
@@ -65,8 +66,9 @@ fn main() -> iced::Result {
     // Remote control of the running daemon over D-Bus.
     #[cfg(target_os = "linux")]
     for (flag, method) in [("--settings", "OpenSettings"), ("--quit", "Quit")] {
-        if args.iter().any(|a| a == flag) {
+        if args.iter().any(|a| a == flag) && !(flag == "--settings" && args.iter().any(|a| a == "--daemon")) {
             if let Err(e) = dbus_service::call_remote(method) {
+                if flag == "--settings" { break; }
                 eprintln!(
                     "[Accent] no running daemon to talk to ({e}). \
                      Start it with: systemctl --user start accent"
@@ -91,8 +93,9 @@ fn main() -> iced::Result {
         }
     }
 
+    let demo_mode = !args.iter().any(|a| a == "--daemon") && std::env::var_os("ACCENT_DEMO").is_some();
     // Demo mode never grabs the keyboard, so it may run beside the daemon.
-    if std::env::var_os("ACCENT_DEMO").is_none() && !acquire_single_instance_lock() {
+    if !demo_mode && !acquire_single_instance_lock() {
         return Ok(());
     }
 
@@ -111,13 +114,13 @@ fn main() -> iced::Result {
 
     // Demo instances must not answer (or steal) the daemon's bus name.
     #[cfg(target_os = "linux")]
-    if std::env::var_os("ACCENT_DEMO").is_none() {
+    if !demo_mode {
         crate::dbus_service::start();
     }
 
     // ACCENT_DEMO opens a window for inspection; a second instance must
     // not also take over the keyboard.
-    if std::env::var_os("ACCENT_DEMO").is_none() {
+    if !demo_mode {
         grab::run_grab_thread(tx, &config);
     } else {
         drop(tx);
@@ -296,14 +299,8 @@ fn acquire_single_instance_lock() -> bool {
             eprintln!("[Accent] could not take over from PID {holder}; retrying via systemd");
             std::process::exit(1);
         }
-        // A launcher / app-grid click while the daemon runs: the useful
-        // thing to do is show its Settings window (Hyprland has no panel
-        // menu; on GNOME the top-bar menu does the same).
-        #[cfg(target_os = "linux")]
-        if dbus_service::call_remote("OpenSettings").is_ok() {
-            eprintln!("[Accent] already running (PID {holder}) — opened its Settings window.");
-            return false;
-        }
+        // Repeated background launches must never interrupt typing. Settings
+        // are requested explicitly by --settings, handled before lock acquisition.
         eprintln!(
             "[Accent] already running (PID {holder}) — nothing to do.\n{}",
             if cfg!(target_os = "macos") {

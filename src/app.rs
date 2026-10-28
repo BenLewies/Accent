@@ -1,5 +1,5 @@
 use iced::futures::SinkExt;
-use iced::widget::{checkbox, column, container, pick_list, row, scrollable, slider, text};
+use iced::widget::{checkbox, column, container, pick_list, row, scrollable, slider, text, button, text_input};
 use iced::widget::{column as column_of, row as row_of};
 
 use crate::config::{ActivationKey, ThemeChoice};
@@ -41,7 +41,7 @@ pub fn request(event: UiEvent) {
     let _ = ui_channel().tx.send(event);
 }
 
-const SETTINGS_COLUMNS: usize = 3;
+const SETTINGS_COLUMNS: usize = 2;
 
 const TEXT_SIZE: f32 = 28.0;
 const CELL_PADDING: f32 = 14.0;
@@ -300,6 +300,8 @@ mod tests {
         // An existing logical window makes update return tasks without opening a native window.
         let cfg = crate::config::Config::default();
         let mut app = App {
+            settings_page: SettingsPage::Typing,
+            language_search: String::new(),
             items_per_page: 1,
             grid: false,
             show_unicode_description: true,
@@ -571,6 +573,8 @@ pub enum Message {
     RightClicked(window::Id),
     Quit,
     ToggleLanguage(String, bool),
+    SetSettingsPage(SettingsPage),
+    SearchLanguages(String),
     RefreshDesktopAppearance,
     SetTheme(ThemeChoice),
     /// Palettes used while `SetTheme(System)` (light / dark desktop).
@@ -588,7 +592,25 @@ pub enum Message {
     Noop,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SettingsPage { Typing, Languages, Appearance, About }
+
+pub fn settings_on_start(args: &[String], demo: Option<&str>) -> bool {
+    !args.iter().any(|arg| arg == "--daemon")
+        && (args.iter().any(|arg| arg == "--settings") || demo == Some("settings"))
+}
+
+#[test]
+fn background_start_never_opens_settings() {
+    assert!(!settings_on_start(&[], None));
+    assert!(!settings_on_start(&["--daemon".into()], Some("settings")));
+    assert!(!settings_on_start(&["--daemon".into(), "--settings".into()], None));
+    assert!(settings_on_start(&["--settings".into()], None));
+}
+
 pub struct App {
+    settings_page: SettingsPage,
+    language_search: String,
     items_per_page: usize,
     /// The open picker is laid out as a grid (Down arrow).
     grid: bool,
@@ -649,7 +671,9 @@ impl App {
         GRAB_RX.set(grab_rx).ok();
         // Development aid: ACCENT_DEMO=overlay|grid|settings opens that window
         // at startup without needing the keyboard grab (or its permissions).
-        let demo = std::env::var("ACCENT_DEMO");
+        let args: Vec<String> = std::env::args().skip(1).collect();
+        let demo = if args.iter().any(|a| a == "--daemon") { Err(std::env::VarError::NotPresent) }
+                   else { std::env::var("ACCENT_DEMO") };
         if let Ok(which) = &demo {
             eprintln!("[Accent] demo mode: {which}");
         }
@@ -664,6 +688,7 @@ impl App {
             ))
             .chain(Task::done(Message::ShowGrid)),
             Ok("settings") => Task::done(Message::OpenSettings),
+            _ if settings_on_start(&args, demo.as_deref().ok()) => Task::done(Message::OpenSettings),
             _ => Task::none(),
         };
         let cfg = crate::config::read_config().unwrap_or_default();
@@ -673,6 +698,8 @@ impl App {
         let activation_key = cfg.activation_key_parsed();
         (
             App {
+                settings_page: SettingsPage::Typing,
+                language_search: String::new(),
                 items_per_page,
                 grid: false,
                 show_unicode_description,
@@ -868,8 +895,8 @@ impl App {
                 self.refresh_from_config();
                 #[allow(unused_mut)]
                 let mut settings = window::Settings {
-                    size: iced::Size::new(560.0, 720.0),
-                    min_size: Some(iced::Size::new(420.0, 360.0)),
+                    size: iced::Size::new(900.0, 680.0),
+                    min_size: Some(iced::Size::new(760.0, 480.0)),
                     position: window::Position::Centered,
                     level: window::Level::Normal,
                     exit_on_close_request: true,
@@ -1003,6 +1030,8 @@ impl App {
                 }
                 Task::none()
             }
+            Message::SetSettingsPage(page) => { self.settings_page = page; Task::none() }
+            Message::SearchLanguages(query) => { self.language_search = query; Task::none() }
             Message::RefreshDesktopAppearance => {
                 // Keep the last complete palette during theme-directory replacement.
                 if let Some(palette) = crate::theme::desktop_palette() {
@@ -1194,12 +1223,16 @@ impl App {
 
     fn settings_view(&self) -> Element<'_, Message> {
         let section = |title: &str, names: &'static [&'static str]| -> Element<'_, Message> {
-            let rows = names.chunks(SETTINGS_COLUMNS).map(|chunk| {
+            let query = self.language_search.to_lowercase();
+            let filtered: Vec<_> = names.iter().copied()
+                .filter(|name| name.to_lowercase().contains(&query)).collect();
+            let rows = filtered.chunks(SETTINGS_COLUMNS).map(|chunk| {
                 let mut cells: Vec<Element<Message>> = chunk
                     .iter()
                     .map(|name| {
+                        let name = *name;
                         let enabled = self.languages.iter().any(|l| l == name);
-                        checkbox(*name, enabled)
+                        checkbox(name, enabled).text_size(14)
                             .on_toggle(move |on| Message::ToggleLanguage(name.to_string(), on))
                             .width(Length::Fill)
                             .into()
@@ -1325,33 +1358,62 @@ impl App {
         .spacing(8)
         .into();
 
-        let body = column(vec![
-            text("Accent").size(22).into(),
-            text("Hold a letter, press Space, pick a variant, release the letter.")
-                .size(13)
-                .into(),
-            appearance,
-            behaviour,
+        let language_page: Element<'_, Message> = column(vec![
+            text("Languages & symbols").size(24).into(),
+            text(format!("{} sets enabled · choose only the sets you use", self.languages.len())).size(13).into(),
+            text_input("Search languages or symbol sets…", &self.language_search)
+                .on_input(Message::SearchLanguages).padding(12).into(),
+            text("Large selections can exceed the direct-typing keymap capacity. Extra characters use clipboard fallback, which may not work in terminals.").size(12).into(),
             section("Languages", crate::mappings::LANGUAGES),
-            section("Symbol sets", crate::mappings::SYMBOL_SETS),
-            text(format!(
-                "Changes apply immediately and are saved to {}",
-                crate::config::config_path().display()
-            ))
-            .size(11)
-            .into(),
-        ])
-        .spacing(18)
-        .padding(24);
-
-        container(scrollable(body))
-            .width(Length::Fill)
-            .height(Length::Fill)
+            section("Symbols", crate::mappings::SYMBOL_SETS),
+        ]).spacing(18).into();
+        let content: Element<'_, Message> = match self.settings_page {
+            SettingsPage::Typing => column(vec![
+                text("Make typing feel natural").size(24).into(),
+                text("Hold a letter → choose a variant → release to insert.").size(14).into(),
+                behaviour,
+                text("Tip: Escape cancels. Down arrow expands the picker into a grid.").size(13).into(),
+            ]).spacing(20).into(),
+            SettingsPage::Languages => language_page,
+            SettingsPage::Appearance => column(vec![
+                text("At home on your desktop").size(24).into(),
+                text("The picker and settings share your desktop colors.").size(14).into(),
+                appearance,
+            ]).spacing(20).into(),
+            SettingsPage::About => column(vec![
+                text("Accent").size(28).into(),
+                text(format!("Version {} · MIT licensed", env!("CARGO_PKG_VERSION"))).size(14).into(),
+                text("Accent characters, one hold away.").size(18).into(),
+                text("Built on QuickAccent by Victor Masson. Personal enhancements maintained by BenLewies. This project is independent of the original author.").size(14).into(),
+                text("Keyboard input is processed locally. Accent does not record your typing or send it to a server. The optional clipboard fallback temporarily uses your clipboard.").size(14).into(),
+                text("Source & support: github.com/BenLewies/Accent").size(14).into(),
+                text(format!("Configuration: {}", crate::config::config_path().display())).size(12).into(),
+            ]).spacing(20).into(),
+        };
+        let navigation = column([
+            ("Typing", SettingsPage::Typing), ("Languages", SettingsPage::Languages),
+            ("Appearance", SettingsPage::Appearance), ("About", SettingsPage::About),
+        ].into_iter().map(|(label, page)| {
+            button(text(label).size(15)).on_press(Message::SetSettingsPage(page))
+                .padding([12, 16]).width(Length::Fill)
+                .style(if self.settings_page == page { button::primary } else { button::text })
+                .into()
+        }).collect::<Vec<Element<'_, Message>>>()).spacing(8).width(170);
+        let body = column(vec![
+            row(vec![text("Á  Accent").size(24).into(),
+                iced::widget::Space::with_width(Length::Fill).into(),
+                text("Settings").size(14).into()]).align_y(iced::Alignment::Center).into(),
+            row(vec![navigation.into(),
+                scrollable(container(content).padding([0, 12]).width(Length::Fill))
+                    .width(Length::Fill).height(Length::Fill).into()
+            ]).spacing(24).height(Length::Fill).into(),
+            text("Changes save automatically · Closing settings keeps Accent running.").size(12).into(),
+        ]).spacing(24).padding(24).height(Length::Fill);
+        container(body).width(Length::Fill).height(Length::Fill)
             .style(|theme: &Theme| container::Style {
                 background: Some(iced::Background::Color(theme.palette().background)),
                 ..Default::default()
-            })
-            .into()
+            }).into()
     }
 
     pub fn subscription(&self) -> Subscription<Message> {

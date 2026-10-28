@@ -6,7 +6,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/accent
+ExecStart=/usr/bin/accent --daemon
 Restart=on-failure
 RestartSec=2
 Environment=PATH=/usr/bin:/usr/local/bin:%h/.local/bin

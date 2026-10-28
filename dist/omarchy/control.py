@@ -2,6 +2,7 @@
 """Small, bounded service controller for the Accent bar widget."""
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -13,15 +14,20 @@ def systemctl(*args, check=True):
                           capture_output=True, timeout=10, check=check)
 
 def status():
-    return {'state': systemctl('is-active', check=False).stdout.strip() or 'unknown',
+    load = systemctl('show', '--property=LoadState', '--value', check=False).stdout.strip()
+    return {'state': 'missing' if load == 'not-found' else (systemctl('is-active', check=False).stdout.strip() or 'unknown'),
             'autostart': systemctl('is-enabled', check=False).stdout.strip() == 'enabled'}
 
 def main(action):
     if action in ('start', 'stop', 'restart', 'enable', 'disable'):
         systemctl(action)
     elif action == 'settings':
-        systemctl('start')
         binary = Path.home() / '.local/bin/accent'
+        if not binary.is_file():
+            found = shutil.which('accent')
+            if not found: raise RuntimeError('Install the Accent daemon first; see the plugin README.')
+            binary = Path(found)
+        systemctl('start')
         for _ in range(30):
             result = subprocess.run([str(binary), '--settings'], capture_output=True,
                                     text=True, timeout=3)

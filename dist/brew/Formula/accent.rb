@@ -15,6 +15,7 @@ class Quickaccent < Formula
   depends_on :macos
 
   def install
+    doc.install "LICENSE", "NOTICE.md", "THIRD_PARTY_NOTICES.md"
     system "cargo", "build", "--release"
 
     # Install as macOS .app bundle (LSUIElement=true → no Dock icon)

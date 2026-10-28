@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 — unreleased Accent debut
+
+- Linux long-press activation alongside Space/arrows.
+- Automatic Omarchy palette matching and theme-aware Á bar controls.
+- Settings pages for Typing, searchable Languages, Appearance and About.
+- Quiet service startup and explicit settings launch; preserved user preferences.
+- Root marketplace manifest, preview, support docs and complete distribution notices.
+
+Earlier entries below describe upstream QuickAccent history, not published Accent binaries.
+
+
 All notable changes to Accent are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 

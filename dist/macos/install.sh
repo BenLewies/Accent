@@ -82,10 +82,12 @@ build_from_source() {
     exit 1
   fi
   command -v cargo >/dev/null || { echo "error: install Rust (https://rustup.rs/)" >&2; exit 1; }
-  (cd "$ROOT" && cargo build --release)
+  (cd "$ROOT" && cargo build --release --locked)
   APP="$tmpdir/Accent.app"
   mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+  (cd "$ROOT" && python3 scripts/bundle_notices.py --target "$(rustc -vV | sed -n 's/^host: //p')" --output "$APP/Contents/Resources/RUST_DEPENDENCY_LICENSES.txt")
   cp "$ROOT/target/release/accent" "$APP/Contents/MacOS/accent"
+  cp "$ROOT/LICENSE" "$ROOT/NOTICE.md" "$ROOT/THIRD_PARTY_NOTICES.md" "$APP/Contents/Resources/"
   chmod +x "$APP/Contents/MacOS/accent"
   if [[ -f "$ROOT/dist/macos/Accent.app/Contents/Info.plist" ]]; then
     cp "$ROOT/dist/macos/Accent.app/Contents/Info.plist" "$APP/Contents/Info.plist"

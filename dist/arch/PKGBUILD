@@ -24,7 +24,7 @@ package() {
   install -Dm755 accent "$pkgdir/usr/bin/accent"
 
   # systemd --user unit (enable with: systemctl --user enable --now accent)
-  sed 's|^ExecStart=.*|ExecStart=/usr/bin/accent|' accent.service \
+  sed 's|^ExecStart=.*|ExecStart=/usr/bin/accent --daemon|' accent.service \
     | install -Dm644 /dev/stdin "$pkgdir/usr/lib/systemd/user/accent.service"
 
   # Group "input" may read keyboards and open /dev/uinput; uinput loads at boot.
@@ -35,5 +35,7 @@ package() {
   install -Dm644 accent.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/accent.svg"
   install -Dm644 accent-256.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/accent.png"
   install -Dm644 accent-512.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/accent.png"
-  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  for notice in LICENSE NOTICE.md THIRD_PARTY_NOTICES.md RUST_DEPENDENCY_LICENSES.txt; do
+    install -Dm644 "$notice" "$pkgdir/usr/share/licenses/$pkgname/$notice"
+  done
 }

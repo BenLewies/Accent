@@ -1,37 +1,107 @@
-# Accent
+# Á Accent
 
-A personal accent picker for Linux and macOS, derived from
-[QuickAccent by Victor Masson](https://github.com/victormasson/QuickAccent).
-The original Git history, MIT license, and third-party notices are preserved.
+**Accent characters, one hold away.**
 
-Hold a letter, choose an accent with Space/arrows, then release to insert.
-On Linux, select **Long press, Space and arrows** in Settings to open the
-picker automatically after the configured hold delay. Escape cancels.
+Write names correctly, switch languages naturally, and find the symbol you need
+without leaving your keyboard. Accent brings a long-press picker and desktop bar
+controls to Omarchy, with colors that follow your desktop theme.
 
-## Desktop integration
+![Accent settings on Omarchy](preview.png)
 
-On Omarchy, Accent's picker and settings follow the active desktop palette,
-including changes while windows are open. The **Á** bar widget opens settings
-on click. Right-click for pause/start, restart, and automatic startup controls.
-The plugin source is in `dist/omarchy`.
+## Why Accent?
 
-The executable is `accent`, the user service is `accent.service`, and
-configuration lives at `~/.config/accent/config.toml`. Use `accent --settings`
-to open settings, or `systemctl --user restart accent` to restart the service.
+- **Hold, choose, release.** Long press alone or combine it with Space/arrow triggers.
+- **Your languages, your picker.** Search language and symbol sets; keep only what you use.
+- **A natural fit.** Picker, settings, and bar controls follow the active Omarchy colors.
+- **Stay in control.** Click **Á** for settings; right-click to pause, restart, or change startup.
+- **Quiet by default.** The service starts in the background. Settings open only on request.
+- **Local processing.** No account, analytics, or keystroke logging in Accent.
 
-## Build
+## Install on Omarchy
 
-Build the personal source rather than installing upstream QuickAccent binaries:
+**Publication status:** this repository is being prepared for public release and
+marketplace review. It is not currently listed or verified. The GitHub plugin-add
+command below becomes available to everyone when the repository is made public.
 
-```sh
-cargo test --all-targets --locked
-cargo build --release --locked
+```bash
+omarchy plugin add https://github.com/BenLewies/Accent --enable
+```
+
+The bar plugin requires the Accent daemon. It does **not** silently download,
+compile, or install privileged software. Until an Accent release is published,
+install from the reviewed source already cloned by the command above:
+
+```bash
+cd ~/.config/omarchy/plugins/bjl.accent
 INSTALL_FROM_SOURCE=1 ./dist/linux/install.sh
 ```
 
-The source installer requires the standard Rust/Linux build dependencies and
-keyboard/uinput permissions. It installs the user service and desktop launcher.
-For systems with GPU device-loss errors, set `ICED_BACKEND=tiny-skia` in the
-Accent service environment to use its built-in software renderer.
+Requires a Rust toolchain, a C compiler, pkg-config, and development libraries
+for X11/XInput/XTest, Wayland, xkbcommon, fontconfig, ALSA and graphics. On Arch,
+these come from the corresponding system packages; see [installation details](docs/INSTALL.md).
+The installer requests elevation for input-device rules/module setup and adds
+your user to the `input` group if necessary. A new login session or reboot may be
+needed for group changes. It installs a per-user service and launcher.
 
-See [character mappings](docs/CHARACTERS.md) for available language sets.
+Already have Accent? Add the bar plugin and use it immediately. The default
+plugin ID remains `bjl.accent` so existing installations retain their settings.
+
+## Use it
+
+1. Open **Á → Settings**, select **Typing → Long press, Space and arrows**.
+2. Hold a letter such as **e** until the picker appears (default delay: 250 ms).
+3. Use Space or left/right arrows to select; release the letter to insert.
+4. Press Escape to cancel, or Down to expand into a grid.
+
+Changes save automatically. **Languages** filters available sets, **Appearance**
+controls picker shape and transparency, and **About** shows provenance and privacy.
+Closing settings leaves the service running. `accent --settings` opens settings;
+`accent --daemon` starts quietly.
+
+## Permissions, privacy & limits
+
+The daemon reads keyboard devices and injects selected characters through uinput.
+Membership of `input` permits reading all keyboards: install only code you trust.
+The QML bar plugin manages only the **user** service and calls the settings CLI.
+It never requests privilege or edits unrelated desktop configuration.
+
+Typing is processed locally. Some characters use a clipboard fallback, which can
+replace clipboard content. Too many enabled language sets exceed the custom
+keymap capacity; overflow characters may not work in terminals. Start with only
+the languages you need. [Character sets](docs/CHARACTERS.md) · [Troubleshooting](docs/INSTALL.md#troubleshooting)
+
+The supported listing target is **Omarchy Quattro on Linux x86_64 with Hyprland**.
+macOS and other Linux desktops have inherited support, but are not covered by the
+Omarchy listing or by local cross-platform validation. No claim of universal
+application compatibility is made.
+
+## Update & remove
+
+Update the plugin using `omarchy plugin update bjl.accent`. When the daemon source
+changes, review it and rerun the source installer, then `systemctl --user restart accent`.
+User settings live in `~/.config/accent/config.toml` and are retained.
+
+```bash
+omarchy plugin disable bjl.accent
+omarchy plugin remove bjl.accent
+systemctl --user disable --now accent.service
+rm -f ~/.local/bin/accent ~/.local/share/applications/accent.desktop
+rm -f ~/.config/systemd/user/accent.service
+systemctl --user daemon-reload
+```
+
+These commands retain settings and license notices. See [complete removal](docs/INSTALL.md#removal)
+for optional icons, renderer override, and device-rule cleanup. Never remove your
+`input` group membership if another application needs it.
+
+## Source, support & attribution
+
+Bug reports: [GitHub issues](https://github.com/BenLewies/Accent/issues).
+Include desktop version, Accent version, trigger mode and a minimal reproduction;
+never include typed passwords or private input. [Contributing](CONTRIBUTING.md) ·
+[Security](SECURITY.md) · [Release preparation](docs/RELEASE_CHECKLIST.md)
+
+Accent is an independent derivative of [QuickAccent by Victor Masson](https://github.com/victormasson/QuickAccent).
+The original copyright and [MIT license](LICENSE) are retained. [NOTICE](NOTICE.md)
+describes our changes; [third-party notices](THIRD_PARTY_NOTICES.md) cover mappings,
+Unicode data, and vendored rdev. No upstream or marketplace endorsement is implied.

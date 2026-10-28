@@ -2,7 +2,6 @@ name: Release
 
 on:
   push:
-    branches: [master]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -12,12 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  # Build-provenance attestations (Sigstore) for the release tarballs, so
-  # anyone can verify an asset independently of the download host:
-  #   gh attestation verify accent-linux-x86_64.tar.gz --repo BenLewies/Accent
-  id-token: write
-  attestations: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -26,8 +20,9 @@ jobs:
   linux:
     name: package-linux-x86_64
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install dependencies
         run: |
@@ -50,14 +45,19 @@ jobs:
             libgl1-mesa-dev \
             libvulkan-dev
 
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
 
       - name: Test
-        run: cargo test --all-targets
+        run: cargo test --all-targets --locked
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --locked
+
+      - name: Dependency notices
+        run: python3 scripts/bundle_notices.py --target x86_64-unknown-linux-gnu --output RUST_DEPENDENCY_LICENSES.txt
 
       - name: Package
         run: |
@@ -71,10 +71,11 @@ jobs:
           cp assets/icon-app.svg "$STAGE/accent.svg"
           cp assets/icon-app-256.png "$STAGE/accent-256.png"
           cp assets/icon-app-512.png "$STAGE/accent-512.png"
-          cp LICENSE "$STAGE/"
+          cp LICENSE NOTICE.md THIRD_PARTY_NOTICES.md "$STAGE/"
+          cp RUST_DEPENDENCY_LICENSES.txt "$STAGE/"
           tar -czf accent-linux-x86_64.tar.gz "$STAGE"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: linux-x86_64
           path: accent-linux-x86_64.tar.gz
@@ -83,26 +84,34 @@ jobs:
   macos:
     name: package-macos-universal
     runs-on: macos-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
 
       - name: Test
-        run: cargo test --all-targets
+        run: cargo test --all-targets --locked
 
       - name: Build universal binary
         run: |
-          cargo build --release --target aarch64-apple-darwin
-          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
           lipo -create -output accent-universal \
             target/aarch64-apple-darwin/release/accent \
             target/x86_64-apple-darwin/release/accent
           lipo -info accent-universal
+
+      - name: Dependency notices
+        run: |
+          python3 scripts/bundle_notices.py --target aarch64-apple-darwin --output notices-arm64.txt
+          python3 scripts/bundle_notices.py --target x86_64-apple-darwin --output notices-x86_64.txt
+          cat notices-arm64.txt notices-x86_64.txt > RUST_DEPENDENCY_LICENSES.txt
 
       - name: Package .app
         run: |
@@ -112,6 +121,8 @@ jobs:
           chmod +x "$APP/Contents/MacOS/accent"
           cp dist/macos/Accent.app/Contents/Info.plist "$APP/Contents/Info.plist"
           cp dist/macos/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+          cp LICENSE NOTICE.md THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
+          cp RUST_DEPENDENCY_LICENSES.txt "$APP/Contents/Resources/"
           # Ad-hoc sign the bundle. Without a bundle-level signature TCC has
           # no stable code requirement to bind the Accessibility grant to, so
           # the toggle never takes effect (and duplicate entries pile up).
@@ -119,7 +130,7 @@ jobs:
           codesign --verify --strict "$APP"
           tar -czf Accent-macos-universal.tar.gz "$APP"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: macos-universal
           path: Accent-macos-universal.tar.gz
@@ -128,11 +139,16 @@ jobs:
   publish:
     name: publish
     needs: [linux, macos]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
           merge-multiple: true
@@ -144,7 +160,7 @@ jobs:
           cat SHA256SUMS
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: |
             artifacts/accent-linux-x86_64.tar.gz
@@ -201,7 +217,7 @@ jobs:
 
       - name: Publish tagged release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
@@ -219,7 +235,7 @@ jobs:
       # ---- rolling build from master ----
       - name: Publish continuous release
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: continuous
           name: continuous
@@ -229,7 +245,7 @@ jobs:
           overwrite_files: true
           generate_release_notes: false
           body: |
-            Rolling build from `master` (updated on every push).
+            Manually requested preview build from the reviewed commit.
 
             For the stable download see the [latest release](https://github.com/${{ github.repository }}/releases/latest).
 

@@ -2,20 +2,20 @@
   "schemaVersion": 1,
   "id": "bjl.accent",
   "name": "Accent",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "BenLewies",
   "license": "MIT",
-  "description": "Accent settings and service controls, following the desktop appearance.",
+  "description": "Type accents with a long press. Desktop-matched picker, searchable languages, and bar controls for Omarchy.",
   "kinds": [
     "bar-widget"
   ],
   "entryPoints": {
-    "barWidget": "BarWidget.qml"
+    "barWidget": "dist/omarchy/BarWidget.qml"
   },
   "barWidget": {
     "displayName": "Accent",
     "description": "Click for settings; right-click for pause, restart and automatic startup.",
-    "category": "System",
+    "category": "Productivity",
     "allowMultiple": false,
     "defaultSection": "right"
   }

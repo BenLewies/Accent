@@ -1,2 +1,6 @@
 /target
 .DS_Store
+
+# Local Python checks
+__pycache__/
+*.pyc

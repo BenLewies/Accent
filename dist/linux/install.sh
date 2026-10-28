@@ -98,9 +98,11 @@ build_from_source() {
     exit 1
   fi
   command -v cargo >/dev/null || { echo "error: install Rust (https://rustup.rs/)" >&2; exit 1; }
-  (cd "$ROOT" && cargo build --release)
+  (cd "$ROOT" && cargo build --release --locked)
   mkdir -p "$tmpdir/pkg"
-  cp "$ROOT/target/release/accent" "$tmpdir/pkg/"
+  (cd "$ROOT" && python3 scripts/bundle_notices.py --target x86_64-unknown-linux-gnu --output "$tmpdir/pkg/RUST_DEPENDENCY_LICENSES.txt")
+  cp "${CARGO_TARGET_DIR:-$ROOT/target}/release/accent" "$tmpdir/pkg/"
+  cp "$ROOT/LICENSE" "$ROOT/NOTICE.md" "$ROOT/THIRD_PARTY_NOTICES.md" "$tmpdir/pkg/"
   cp "$ROOT/dist/linux/accent.service" "$tmpdir/pkg/" 2>/dev/null || true
   cp "$ROOT/dist/linux/accent.desktop" "$tmpdir/pkg/" 2>/dev/null || true
   cp "$ROOT/dist/linux/60-accent.rules" "$tmpdir/pkg/" 2>/dev/null || true
@@ -123,6 +125,14 @@ else
     PKG="$tmpdir/pkg"
   fi
 fi
+
+# Refuse incomplete release packages before installing anything.
+for notice in LICENSE NOTICE.md THIRD_PARTY_NOTICES.md RUST_DEPENDENCY_LICENSES.txt; do
+  [[ -f "$PKG/$notice" ]] || { echo "error: package missing $notice" >&2; exit 1; }
+done
+LICENSE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/licenses/accent"
+mkdir -p "$LICENSE_DIR"
+install -m 644 "$PKG/LICENSE" "$PKG/NOTICE.md" "$PKG/THIRD_PARTY_NOTICES.md" "$PKG/RUST_DEPENDENCY_LICENSES.txt" "$LICENSE_DIR/"
 
 echo "==> Install binary + desktop files"
 mkdir -p "$BIN_DIR" "$UNIT_DIR" "$APP_DIR" \
@@ -153,10 +163,10 @@ fi
 
 if [[ -f "$PKG/accent.service" ]]; then
   # Point ExecStart at installed binary
-  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent|" "$PKG/accent.service" \
+  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent --daemon|" "$PKG/accent.service" \
     > "$UNIT_DIR/accent.service"
 elif [[ -n "${ROOT:-}" && -f "$ROOT/dist/linux/accent.service" ]]; then
-  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent|" "$ROOT/dist/linux/accent.service" \
+  sed "s|ExecStart=.*|ExecStart=$BIN_DIR/accent --daemon|" "$ROOT/dist/linux/accent.service" \
     > "$UNIT_DIR/accent.service"
 fi
 

@@ -2,7 +2,7 @@
 Type=Application
 Name=Accent
 Comment=Hold a letter, press Space, pick an accent character
-Exec=accent
+Exec=accent --settings
 Icon=accent
 Terminal=false
 Categories=Utility;Accessibility;
