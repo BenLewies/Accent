@@ -368,6 +368,16 @@ where
     _grab(callback)
 }
 
+/// Linux grab with a periodic callback on the input thread.
+#[cfg(all(target_os = "linux", feature = "unstable_grab"))]
+pub fn grab_with_tick<T, U>(callback: T, tick: U) -> Result<(), GrabError>
+where
+    T: Fn(Event, bool) -> Option<Event> + 'static,
+    U: FnMut() -> i32,
+{
+    crate::linux::grab_with_tick(callback, tick)
+}
+
 // QuickAccent patch: Linux-only variant of `grab` whose callback also
 // receives `is_repeat` — true for kernel autorepeat key events (EV_KEY
 // value 2), which stock rdev collapses into indistinguishable KeyPress.

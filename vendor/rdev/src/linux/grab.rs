@@ -316,6 +316,16 @@ pub fn grab_with_is_repeat<T>(callback: T) -> Result<(), GrabError>
 where
     T: Fn(Event, bool) -> Option<Event> + 'static,
 {
+    grab_with_tick(callback, || -1)
+}
+
+/// Run `tick` after draining input; it returns the next wait in milliseconds
+/// (-1 waits indefinitely). Timer and key callbacks always run serially.
+pub fn grab_with_tick<T, U>(callback: T, tick: U) -> Result<(), GrabError>
+where
+    T: Fn(Event, bool) -> Option<Event> + 'static,
+    U: FnMut() -> i32,
+{
     let mut kb = Keyboard::new().ok_or(GrabError::KeyboardError)?;
     let display = Display::new().ok_or(GrabError::MissingDisplayError)?;
     let (width, height) = display.get_size().ok_or(GrabError::MissingDisplayError)?;
@@ -326,7 +336,7 @@ where
     let mut y = current_y as f64;
     let w = width as f64;
     let h = height as f64;
-    filter_map_events(|event| {
+    filter_map_events_with_tick(|event| {
         let is_repeat = matches!(&event.event_code, EventCode::EV_KEY(_)) && event.value == 2;
         let event_type = match evdev_event_to_rdev_event(&event, &mut x, &mut y, w, h) {
             Some(rdev_event) => rdev_event,
@@ -345,7 +355,7 @@ where
             // callback returns None, swallow the event
             (None, GrabStatus::Continue)
         }
-    })?;
+    }, tick)?;
     Ok(())
 }
 
@@ -353,6 +363,15 @@ pub fn filter_map_events<F>(mut func: F) -> io::Result<()>
 where
     F: FnMut(InputEvent) -> (Option<InputEvent>, GrabStatus),
 {
+    filter_map_events_with_tick(&mut func, || -1)
+}
+
+fn filter_map_events_with_tick<F, U>(mut func: F, mut tick: U) -> io::Result<()>
+where
+    F: FnMut(InputEvent) -> (Option<InputEvent>, GrabStatus),
+    U: FnMut() -> i32,
+{
+    let mut timeout_ms = -1;
     let (epoll_fd, mut devices, output_devices, mut inodes) = setup_devices()?;
     // QuickAccent patch: a clone is dropped (destroying its uinput device)
     // when the keyboard it mirrors goes away, so reconnects leave no ghosts.
@@ -375,7 +394,7 @@ where
         // QuickAccent patch: epoll_wait is interrupted (EINTR) by signals and
         // suspend/resume; propagating that killed the whole grab loop while
         // the daemon kept running deaf.
-        let num_events = match epoll::wait(epoll_fd, -1, &mut epoll_buffer) {
+        let num_events = match epoll::wait(epoll_fd, timeout_ms, &mut epoll_buffer) {
             Ok(n) => n,
             Err(e) if e.kind() == io::ErrorKind::Interrupted => continue 'event_loop,
             Err(e) => return Err(e),
@@ -438,6 +457,7 @@ where
                 }
             }
         }
+        timeout_ms = tick();
     }
 
     for device in devices.iter_mut() {

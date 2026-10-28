@@ -1270,7 +1270,7 @@ impl App {
                 format!("{} ms", self.hold_delay_ms),
                 slider(50.0..=800.0, self.hold_delay_ms as f32, Message::SetHoldDelay).into(),
             ),
-            text("How long to hold a letter before Space shows the picker.")
+            text("Hold time before activation; long press opens the picker automatically.")
                 .size(11)
                 .into(),
             settings_slider(

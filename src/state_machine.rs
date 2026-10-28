@@ -216,10 +216,53 @@ impl StateMachine {
             ActivationKey::LeftRightArrow => {
                 matches!(input, KeyInput::LeftArrow | KeyInput::RightArrow)
             }
+            #[cfg(target_os = "linux")]
+            ActivationKey::LongPress => false,
+            #[cfg(target_os = "linux")]
+            ActivationKey::BothLongPress => {
+                matches!(input, KeyInput::Space | KeyInput::LeftArrow | KeyInput::RightArrow)
+            }
             ActivationKey::Both => {
                 matches!(input, KeyInput::Space | KeyInput::LeftArrow | KeyInput::RightArrow)
             }
         }
+    }
+
+    /// Sleep until the hold deadline; no periodic wakeups while idle.
+    #[cfg(target_os = "linux")]
+    pub fn long_press_wait_ms(&self) -> i32 {
+        if matches!(self.activation_key, ActivationKey::LongPress | ActivationKey::BothLongPress) {
+            if let AccentState::LetterHeld { held_since, .. } = self.state {
+                let remaining = self.hold_delay.saturating_sub(held_since.elapsed());
+                // Round up so a sub-millisecond remainder cannot busy-loop.
+                return (remaining.as_millis() + 1).min(i32::MAX as u128) as i32;
+            }
+        }
+        -1
+    }
+
+    /// Called on the Linux grab thread, independently of key autorepeat.
+    #[cfg(target_os = "linux")]
+    pub fn long_press_tick(&mut self, shift_held: bool) -> Option<GrabEvent> {
+        if !matches!(self.activation_key, ActivationKey::LongPress | ActivationKey::BothLongPress) {
+            return None;
+        }
+        let AccentState::LetterHeld { key, code, shift_at_press, held_since } = self.state else {
+            return None;
+        };
+        if held_since.elapsed() < self.hold_delay {
+            return None;
+        }
+        let uppercase = shift_at_press || shift_held;
+        let variants = crate::mappings::get_variants(key, uppercase);
+        if variants.is_empty() {
+            return None;
+        }
+        self.grid = false;
+        self.state = AccentState::Selecting {
+            key, code, uppercase, variants: variants.clone(), selected_index: 0, held_since,
+        };
+        Some(GrabEvent::ShowOverlay { variants, index: 0 })
     }
 
     fn try_enter_letter_held(&mut self, mk: MappingKey, code: u16, shift_held: bool) -> bool {
@@ -663,6 +706,84 @@ mod tests {
     fn sm(activation: ActivationKey) -> StateMachine {
         // Non-zero delays; tests backdate held_since instead of sleeping.
         StateMachine::new(200, 250, activation)
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn long_press_waits_opens_once_and_commits_selected_variant() {
+        let _guard = setup();
+        let mut sm = sm(ActivationKey::LongPress);
+        assert!(sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false).suppress);
+        assert!(sm.long_press_tick(false).is_none());
+        assert!((1..=251).contains(&sm.long_press_wait_ms()));
+        sm.set_held_ago(Duration::from_millis(300));
+        let Some(GrabEvent::ShowOverlay { variants, index: 0 }) = sm.long_press_tick(false) else {
+            panic!("long press must open without another key event");
+        };
+        assert!(sm.long_press_tick(false).is_none());
+        assert_eq!(sm.long_press_wait_ms(), -1);
+        assert!(sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false).suppress);
+        assert_eq!(sm.deferred_press(KeyInput::RightArrow, Some(106), false, false).ui,
+            Some(GrabEvent::UpdateSelection(1)));
+        assert_eq!(sm.deferred_release(Some(18), false).inject, Some(variants[1].clone()));
+        assert!(sm.long_press_tick(false).is_none());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn long_press_taps_rollover_shortcuts_and_escape() {
+        let _guard = setup();
+        let mut sm = sm(ActivationKey::LongPress);
+        sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+        assert_eq!(sm.deferred_release(Some(18), false).emit,
+            vec![KeyEvt::Press(18), KeyEvt::Release(18)]);
+        assert!(sm.long_press_tick(false).is_none());
+        // Modifiers already down bypass accents.
+        assert!(!sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, true).suppress);
+        assert!(sm.long_press_tick(false).is_none());
+        sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+        // A chord started during the hold cancels the timer too.
+        sm.deferred_press(KeyInput::Other, Some(KEY_LEFTCTRL), false, false);
+        assert!(sm.long_press_tick(false).is_none());
+        sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+        sm.set_held_ago(Duration::from_millis(300));
+        // In long-press-only mode Space is normal typing until the timer opens.
+        let action = sm.deferred_press(KeyInput::Space, Some(57), false, false);
+        assert!(action.ui.is_none());
+        assert!(sm.long_press_tick(false).is_none());
+        sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+        sm.set_held_ago(Duration::from_millis(300));
+        assert!(sm.long_press_tick(false).is_some());
+        let cancel = sm.deferred_press(KeyInput::Escape, Some(1), false, false);
+        assert_eq!(cancel.ui, Some(GrabEvent::HideOverlay));
+        assert_eq!(cancel.emit, vec![KeyEvt::Press(18), KeyEvt::Release(18)]);
+        assert!(sm.long_press_tick(false).is_none());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn long_press_preserves_case_and_existing_trigger_modes() {
+        let _guard = setup();
+        for activation in [ActivationKey::Space, ActivationKey::LeftRightArrow, ActivationKey::Both] {
+            let mut sm = sm(activation);
+            sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+            sm.set_held_ago(Duration::from_secs(2));
+            assert!(sm.long_press_tick(false).is_none());
+        }
+        for (shift_at_press, shift_now) in [(true, false), (false, true)] {
+            let mut sm = sm(ActivationKey::BothLongPress);
+            sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), shift_at_press, false);
+            sm.set_held_ago(Duration::from_millis(300));
+            let expected = mappings::get_variants(MappingKey::E, true);
+            assert_eq!(sm.long_press_tick(shift_now), Some(GrabEvent::ShowOverlay { variants: expected, index: 0 }));
+        }
+        for trigger in [KeyInput::Space, KeyInput::LeftArrow, KeyInput::RightArrow] {
+            let mut sm = sm(ActivationKey::BothLongPress);
+            sm.deferred_press(KeyInput::Letter(MappingKey::E), Some(18), false, false);
+            sm.set_held_ago(Duration::from_millis(300));
+            assert!(matches!(sm.deferred_press(trigger, Some(57), false, false).ui,
+                Some(GrabEvent::ShowOverlay { .. })));
+        }
     }
 
     fn press_e(sm: &mut StateMachine) {

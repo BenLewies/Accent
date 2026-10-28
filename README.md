@@ -22,6 +22,19 @@ Hold a letter → Space → pick an accent → release to insert.
 Just tapping a letter types it normally (it appears on key release); accented
 letters don't auto-repeat while held, exactly like macOS press-and-hold.
 
+## Long-press activation (Linux)
+
+In Settings → Behaviour → Activation key, select **Long press** to open the
+picker just by holding a letter, or **Long press, Space and arrows** to keep
+both activation methods. Adjust **Hold delay** to control the wait (250 ms by
+default). Space/arrows select a variant, releasing the letter inserts it, and
+Escape cancels. Short taps still type normally. Keyboard repeat is not required.
+
+The equivalent configuration is `activation_key = "LongPress"` or
+`activation_key = "BothLongPress"` in `~/.config/quickaccent/config.toml`.
+Existing configurations keep their current activation method. These additional
+modes are currently available on Linux only.
+
 ## Install
 
 Prebuilt binaries, no Rust needed: the stable

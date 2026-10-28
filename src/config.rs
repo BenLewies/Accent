@@ -6,13 +6,21 @@ pub enum ActivationKey {
     Space,
     LeftRightArrow,
     Both,
+    #[cfg(target_os = "linux")]
+    LongPress,
+    #[cfg(target_os = "linux")]
+    BothLongPress,
 }
 
 impl ActivationKey {
-    pub const ALL: [ActivationKey; 3] = [
+    pub const ALL: &'static [ActivationKey] = &[
         ActivationKey::Space,
         ActivationKey::LeftRightArrow,
         ActivationKey::Both,
+        #[cfg(target_os = "linux")]
+        ActivationKey::LongPress,
+        #[cfg(target_os = "linux")]
+        ActivationKey::BothLongPress,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -20,6 +28,10 @@ impl ActivationKey {
             ActivationKey::Space => "Space",
             ActivationKey::LeftRightArrow => "LeftRightArrow",
             ActivationKey::Both => "Both",
+            #[cfg(target_os = "linux")]
+            ActivationKey::LongPress => "LongPress",
+            #[cfg(target_os = "linux")]
+            ActivationKey::BothLongPress => "BothLongPress",
         }
     }
 
@@ -28,6 +40,10 @@ impl ActivationKey {
             ActivationKey::Space => "Space",
             ActivationKey::LeftRightArrow => "Left / Right arrow",
             ActivationKey::Both => "Space and arrows",
+            #[cfg(target_os = "linux")]
+            ActivationKey::LongPress => "Long press",
+            #[cfg(target_os = "linux")]
+            ActivationKey::BothLongPress => "Long press, Space and arrows",
         }
     }
 }
@@ -205,6 +221,10 @@ impl Config {
         match self.activation_key.as_str() {
             "Space" => ActivationKey::Space,
             "LeftRightArrow" => ActivationKey::LeftRightArrow,
+            #[cfg(target_os = "linux")]
+            "LongPress" => ActivationKey::LongPress,
+            #[cfg(target_os = "linux")]
+            "BothLongPress" => ActivationKey::BothLongPress,
             _ => ActivationKey::Both,
         }
     }
@@ -322,6 +342,8 @@ languages = ["French"]
 # hold_delay_ms = 250
 
 # Which key(s) trigger the accent overlay: "Space", "LeftRightArrow", or "Both"
+# Linux also supports "LongPress" and "BothLongPress" (long press + Space/arrows).
+# Long press opens automatically after hold_delay_ms.
 # Default: "Both"
 # activation_key = "Both"
 
@@ -527,6 +549,14 @@ mod tests {
         assert_eq!(c.activation_key_parsed(), ActivationKey::Both);
         c.activation_key = "whatever".into();
         assert_eq!(c.activation_key_parsed(), ActivationKey::Both);
+    }
+
+    #[test]
+    fn all_activation_modes_round_trip() {
+        for &key in ActivationKey::ALL {
+            let config = parse_config_str(&format!("activation_key = {:?}", key.as_str())).unwrap();
+            assert_eq!(config.activation_key_parsed(), key);
+        }
     }
 
     #[test]

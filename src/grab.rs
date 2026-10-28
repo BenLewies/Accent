@@ -377,7 +377,7 @@ mod platform {
     use crate::state_machine::{Action, KeyEvt, ReleaseAction};
     use crate::virtual_kb;
     use crate::xkb_map;
-    use rdev::{grab_with_is_repeat, Event, EventType, Key};
+    use rdev::{grab_with_tick, Event, EventType, Key};
     use std::collections::HashMap;
 
     /// Physically held modifiers, tracked from the raw event stream.
@@ -682,6 +682,18 @@ mod platform {
         }
     }
 
+    fn place_overlay() {
+        crate::app::set_overlay_placement(
+            crate::x11_layout::focused_window_placement().map(|p| crate::app::Anchor {
+                x: p.rect.x,
+                y: p.rect.y,
+                width: p.rect.width,
+                height: p.rect.height,
+                scale: p.scale,
+            }),
+        );
+    }
+
     /// One run of the evdev grab. Returns when the underlying event loop ends
     /// (error, or all devices gone); the caller decides whether to retry.
     fn run_grab_once(
@@ -691,8 +703,20 @@ mod platform {
         tx: &UnboundedSender<GrabEvent>,
     ) {
         let tx = tx.clone();
-        let state = RefCell::new(StateMachine::new(input_time_ms, hold_delay_ms, activation_key));
-        let mods = RefCell::new(Mods::default());
+        let state = std::rc::Rc::new(RefCell::new(StateMachine::new(input_time_ms, hold_delay_ms, activation_key)));
+        let mods = std::rc::Rc::new(RefCell::new(Mods::default()));
+        let tick_state = state.clone();
+        let tick_mods = mods.clone();
+        let tick_tx = tx.clone();
+        let tick = move || {
+            let mut state = tick_state.borrow_mut();
+            apply_live(&mut state);
+            if let Some(event) = state.long_press_tick(tick_mods.borrow().shift()) {
+                place_overlay();
+                let _ = tick_tx.send(event);
+            }
+            state.long_press_wait_ms()
+        };
         let pending_release: RefCell<HashMap<u16, ReleaseAction>> = RefCell::new(HashMap::new());
 
         let callback = move |event: Event, is_repeat: bool| -> Option<Event> {
@@ -790,17 +814,7 @@ mod platform {
                     // Anchor the overlay on the window being typed in, so it
                     // opens on the right monitor (needs the shell extension;
                     // None keeps the primary-centered fallback).
-                    crate::app::set_overlay_placement(
-                        crate::x11_layout::focused_window_placement().map(|p| {
-                            crate::app::Anchor {
-                                x: p.rect.x,
-                                y: p.rect.y,
-                                width: p.rect.width,
-                                height: p.rect.height,
-                                scale: p.scale,
-                            }
-                        }),
-                    );
+                    place_overlay();
                 }
                 let _ = tx.send(ge);
             }
@@ -811,7 +825,7 @@ mod platform {
             }
         };
 
-        if let Err(e) = grab_with_is_repeat(callback) {
+        if let Err(e) = grab_with_tick(callback, tick) {
             eprintln!("[QuickAccent] grab error: {e:?}");
         }
     }
