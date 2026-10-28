@@ -309,6 +309,7 @@ mod tests {
             overlay_window: Some(window::Id::unique()),
             settings_window: None,
             languages: Vec::new(),
+            desktop_palette: None,
             theme_choice: ThemeChoice::Dark,
             theme_light: ThemeChoice::Light,
             theme_dark: ThemeChoice::Dark,
@@ -570,6 +571,7 @@ pub enum Message {
     RightClicked(window::Id),
     Quit,
     ToggleLanguage(String, bool),
+    RefreshDesktopAppearance,
     SetTheme(ThemeChoice),
     /// Palettes used while `SetTheme(System)` (light / dark desktop).
     SetThemeLight(ThemeChoice),
@@ -601,6 +603,7 @@ pub struct App {
     /// Enabled languages / symbol sets, in config order.
     languages: Vec<String>,
     /// Appearance from config; `System` follows macOS when a window opens.
+    desktop_palette: Option<crate::theme::DesktopPalette>,
     theme_choice: ThemeChoice,
     /// Palettes `System` resolves to on a light / dark desktop.
     theme_light: ThemeChoice,
@@ -680,6 +683,7 @@ impl App {
                 overlay_scale: 1.0,
                 settings_window: None,
                 languages: cfg.languages,
+                desktop_palette: crate::theme::desktop_palette(),
                 theme_choice,
                 theme_light,
                 theme_dark,
@@ -999,6 +1003,15 @@ impl App {
                 }
                 Task::none()
             }
+            Message::RefreshDesktopAppearance => {
+                // Keep the last complete palette during theme-directory replacement.
+                if let Some(palette) = crate::theme::desktop_palette() {
+                    if self.desktop_palette.as_ref() != Some(&palette) {
+                        self.desktop_palette = Some(palette);
+                    }
+                }
+                Task::none()
+            }
             Message::Noop => Task::none(),
         }
     }
@@ -1055,8 +1068,9 @@ impl App {
                 .into();
         }
 
-        let colors =
-            crate::theme::overlay_colors(self.effective_theme(), self.dark, self.overlay_opacity);
+        let colors = self.desktop_palette.as_ref()
+            .map(|palette| palette.overlay(self.overlay_opacity))
+            .unwrap_or_else(|| crate::theme::overlay_colors(self.effective_theme(), self.dark, self.overlay_opacity));
         let chip = colors.chip;
         let chip_text = colors.chip_text;
         let selected = colors.selected;
@@ -1207,7 +1221,7 @@ impl App {
         };
 
         // Following the system: choose what "light" and "dark" mean.
-        let system_palettes: Vec<Element<'_, Message>> = if self.theme_choice == ThemeChoice::System {
+        let system_palettes: Vec<Element<'_, Message>> = if self.desktop_palette.is_none() && self.theme_choice == ThemeChoice::System {
             vec![row_of![
                 column_of![
                     text("Light desktop").size(13),
@@ -1231,9 +1245,12 @@ impl App {
         };
         let appearance: Element<'_, Message> = column(vec![
             text("Appearance").size(15).into(),
-            pick_list(ThemeChoice::ALL, Some(self.theme_choice), Message::SetTheme)
-                .width(Length::Fill)
-                .into(),
+            if self.desktop_palette.is_some() {
+                text("Following the active Omarchy desktop theme automatically.").size(13).into()
+            } else {
+                pick_list(ThemeChoice::ALL, Some(self.theme_choice), Message::SetTheme)
+                    .width(Length::Fill).into()
+            },
         ]
         .into_iter()
         .chain(system_palettes)
@@ -1341,6 +1358,10 @@ impl App {
         Subscription::batch([
             Subscription::run(grab_subscription),
             Subscription::run(ui_subscription),
+            if self.desktop_palette.is_some() {
+                iced::time::every(std::time::Duration::from_millis(500))
+                    .map(|_| Message::RefreshDesktopAppearance)
+            } else { Subscription::none() },
             window::close_events().map(Message::WindowClosed),
             iced::event::listen_with(|event, _status, window| match event {
                 iced::Event::Mouse(iced::mouse::Event::ButtonPressed(
@@ -1362,7 +1383,8 @@ impl App {
     }
 
     pub fn theme(&self, _window_id: window::Id) -> Theme {
-        crate::theme::iced_theme(self.effective_theme(), self.dark)
+        self.desktop_palette.as_ref().map(|palette| palette.theme())
+            .unwrap_or_else(|| crate::theme::iced_theme(self.effective_theme(), self.dark))
     }
 
     /// Window backgrounds. The picker is see-through so rounded corners and

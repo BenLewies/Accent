@@ -194,3 +194,96 @@ mod tests {
         assert!(is_dark(ThemeChoice::CatppuccinMocha));
     }
 }
+
+/// Omarchy's active palette, shared by the picker and settings window.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DesktopPalette {
+    background: Color,
+    foreground: Color,
+    accent: Color,
+    selection: Color,
+    green: Color,
+    red: Color,
+}
+
+impl DesktopPalette {
+    pub fn parse(contents: &str) -> Option<Self> {
+        let values: toml::Value = toml::from_str(contents).ok()?;
+        let color = |key: &str| -> Option<Color> {
+            let hex = values.get(key)?.as_str()?.strip_prefix('#')?;
+            if hex.len() != 6 { return None; }
+            let rgb = u32::from_str_radix(hex, 16).ok()?;
+            Some(Color::from_rgb8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8))
+        };
+        Some(Self {
+            background: color("background")?, foreground: color("foreground")?,
+            accent: color("accent")?, selection: color("selection")?,
+            green: color("green")?, red: color("red")?,
+        })
+    }
+
+    pub fn theme(&self) -> Theme {
+        Theme::custom("Desktop appearance".into(), iced::theme::Palette {
+            background: self.background, text: self.foreground, primary: self.accent,
+            success: self.green, danger: self.red,
+        })
+    }
+
+    pub fn overlay(&self, opacity: f32) -> OverlayColors {
+        OverlayColors {
+            panel: Some(Color { a: opacity.clamp(0.35, 1.0), ..self.background }),
+            chip: self.selection, chip_text: self.foreground,
+            selected: self.accent,
+            selected_text: if luminance(self.accent) > 0.179 { Color::BLACK } else { Color::WHITE },
+        }
+    }
+}
+
+fn luminance(color: Color) -> f32 {
+    let linear = |c: f32| if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) };
+    0.2126 * linear(color.r) + 0.7152 * linear(color.g) + 0.0722 * linear(color.b)
+}
+
+pub fn desktop_palette() -> Option<DesktopPalette> {
+    #[cfg(target_os = "linux")]
+    if crate::hyprland::is_running() {
+        // Read the current path afresh: Omarchy atomically replaces the theme
+        // directory when switching. Never retain a symlink's old target.
+        let current = dirs::state_dir()?.join("omarchy/current/theme/colors.toml");
+        return DesktopPalette::parse(&std::fs::read_to_string(current).ok()?);
+    }
+    None
+}
+
+#[cfg(test)]
+mod desktop_tests {
+    use super::*;
+    const DARK: &str = r##"background = "#060B1E"
+foreground = "#ffcead"
+accent = "#7d82d9"
+selection = "#252e56"
+green = "#92a593"
+red = "#ED5B5A"
+"##;
+
+    #[test]
+    fn desktop_colors_reach_both_windows_and_refresh() {
+        let dark = DesktopPalette::parse(DARK).unwrap();
+        assert_eq!(dark.theme().palette().background, color!(0x060B1E));
+        assert_eq!(dark.overlay(0.8).chip_text, color!(0xffcead));
+        assert_eq!(dark.overlay(0.8).chip, color!(0x252e56));
+        assert_eq!(dark.overlay(0.8).selected, color!(0x7d82d9));
+        let light = DesktopPalette::parse(&DARK.replace("#060B1E", "#ffffff").replace("#7d82d9", "#000000")).unwrap();
+        assert_ne!(dark, light);
+        assert_eq!(light.theme().palette().background, Color::WHITE);
+        assert_eq!(light.overlay(1.0).selected_text, Color::WHITE);
+        assert_eq!(dark.overlay(1.0).selected_text, Color::BLACK);
+    }
+
+    #[test]
+    fn incomplete_or_invalid_palette_is_rejected() {
+        assert!(DesktopPalette::parse("").is_none());
+        assert!(DesktopPalette::parse(&DARK.replace("#060B1E", "#xyzxyz")).is_none());
+        assert!(DesktopPalette::parse(&DARK.replace("#060B1E", "#123")).is_none());
+    }
+}

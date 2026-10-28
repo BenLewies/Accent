@@ -22,6 +22,15 @@ Hold a letter → Space → pick an accent → release to insert.
 Just tapping a letter types it normally (it appears on key release); accented
 letters don't auto-repeat while held, exactly like macOS press-and-hold.
 
+## Omarchy desktop appearance
+
+On Hyprland with Omarchy, the picker and settings window automatically follow
+`$XDG_STATE_HOME/omarchy/current/theme/colors.toml` (normally
+`~/.local/state/omarchy/current/theme/colors.toml`). Background, text, accent,
+selection and status colors refresh within half a second of a theme change,
+including while a window is open. The last valid palette is retained during
+file replacement. Other desktops keep the existing appearance controls.
+
 ## Long-press activation (Linux)
 
 In Settings → Behaviour → Activation key, select **Long press** to open the
