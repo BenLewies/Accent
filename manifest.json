@@ -5,7 +5,7 @@
   "version": "1.4.0",
   "author": "BenLewies",
   "license": "MIT",
-  "description": "Type accents with a long press. Desktop-matched picker, searchable languages, and bar controls for Omarchy.",
+  "description": "Type accents and symbols without breaking your flow. Hold a letter, choose a character, and keep typing on Omarchy.",
   "kinds": [
     "bar-widget"
   ],

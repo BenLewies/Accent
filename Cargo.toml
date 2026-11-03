@@ -2,7 +2,7 @@
 name = "accent"
 version = "1.4.0"
 edition = "2021"
-description = "Cross-platform accent character picker inspired by PowerToys PowerAccent"
+description = "Accents and symbols without breaking your flow — a character picker with Omarchy bar controls"
 license = "MIT"
 repository = "https://github.com/BenLewies/Accent"
 readme = "README.md"

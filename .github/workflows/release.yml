@@ -187,18 +187,24 @@ jobs:
           ## Install
 
           \`\`\`bash
-          # Arch / Omarchy (AUR)
-          yay -S accent-bin
-
-          # Other Linux (Fedora, Debian…): clone at this tag, the installer verifies
+          # Linux x86_64 (including Arch / Omarchy): the installer verifies
           # the asset against SHA256SUMS before installing it
           git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
-          Accent/dist/linux/install.sh
+          ACCENT_VERSION=${GITHUB_REF_NAME} Accent/dist/linux/install.sh
 
           # macOS (universal)
           git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
-          Accent/dist/macos/install.sh
+          ACCENT_VERSION=${GITHUB_REF_NAME} Accent/dist/macos/install.sh
           \`\`\`
+
+          Omarchy bar controls are installed separately:
+
+          \`\`\`bash
+          omarchy plugin add https://github.com/${{ github.repository }} --enable
+          \`\`\`
+
+          See the README for input-device permissions, dependencies and removal.
+          No Accent AUR package is currently published.
 
           ## Verify an asset
 

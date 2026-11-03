@@ -1,12 +1,21 @@
-# Á Accent
+# Accent
 
-**Accent characters, one hold away.**
+![Accent — Give every word its accent](assets/accent-banner.svg)
 
-Write names correctly, switch languages naturally, and find the symbol you need
-without leaving your keyboard. Accent brings a long-press picker and desktop bar
-controls to Omarchy, with colors that follow your desktop theme.
+**Accents and symbols, without breaking your flow.**
 
-![Accent settings on Omarchy](preview.png)
+Write **café**, **señor**, and **über** with the letters already on your keyboard.
+Hold a letter, choose its accent, and keep typing. Accent brings a configurable
+character picker and bar controls to Omarchy, with colors that follow your desktop.
+
+[Install](#install-on-omarchy) · [How it works](#use-it) · [Character sets](docs/CHARACTERS.md) · [Get help](https://github.com/BenLewies/Accent/issues)
+
+<details>
+<summary>See Accent’s theme-aware settings</summary>
+
+![Accent appearance settings on Omarchy, with opacity and corner-radius controls](preview.png)
+
+</details>
 
 ## Why Accent?
 
@@ -48,7 +57,7 @@ plugin ID remains `bjl.accent` so existing installations retain their settings.
 
 ## Use it
 
-1. Open **Á → Settings**, select **Typing → Long press, Space and arrows**.
+1. Click **Á** in the bar to open settings; select **Typing → Long press, Space and arrows**.
 2. Hold a letter such as **e** until the picker appears (default delay: 250 ms).
 3. Use Space or left/right arrows to select; release the letter to insert.
 4. Press Escape to cancel, or Down to expand into a grid.
@@ -74,6 +83,21 @@ The supported listing target is **Omarchy Quattro on Linux x86_64 with Hyprland*
 macOS and other Linux desktops have inherited support, but are not covered by the
 Omarchy listing or by local cross-platform validation. No claim of universal
 application compatibility is made.
+
+## Questions before installing
+
+**Is this a keyboard layout?** Accent adds a character picker to your typing workflow.
+Choose language sets in settings; you do not need to memorize compose sequences.
+
+**Does adding the plugin install everything?** There are two parts: the Omarchy bar
+plugin and the Accent daemon. Install the daemon once using the instructions above;
+the bar then provides settings and service controls.
+
+**Can I pause it?** Right-click **Á** and pause the service. Start it again from the
+same menu. Opening settings also starts the daemon if it is paused.
+
+**Does it work in every app?** Compatibility depends on the application and character.
+Clipboard fallback and terminal limitations are described above.
 
 ## Update & remove
 

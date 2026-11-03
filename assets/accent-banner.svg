@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+<title id="title">Accent — Give every word its accent</title>
+<desc id="desc">Promotional illustration for Accent. Café, señor and über demonstrate accented words. Hold, choose, keep typing. For Omarchy and Hyprland.</desc>
+<rect width="1280" height="640" rx="24" fill="#090d20"/>
+<circle cx="1130" cy="100" r="280" fill="#131a36"/>
+<path d="M940 0L1280 340M1040 0L1280 240" stroke="#292c52" stroke-width="2"/>
+<g font-family="DejaVu Sans, sans-serif">
+<text x="72" y="90" font-size="29" fill="#ffbe98">Á  Accent</text>
+<text x="72" y="210" font-size="60" font-weight="bold" fill="#f7f2ed">Give every word</text>
+<text x="72" y="284" font-size="60" font-weight="bold" fill="#f7f2ed">its accent.</text>
+<text x="72" y="346" font-size="24" fill="#b4b9d0">Hold a letter. Choose a character. Keep typing.</text>
+<rect x="72" y="400" width="184" height="88" rx="18" fill="#222944"/>
+<rect x="276" y="400" width="214" height="88" rx="18" fill="#5654c7"/>
+<rect x="510" y="400" width="194" height="88" rx="18" fill="#222944"/>
+<text x="108" y="458" font-size="42" fill="#f7f2ed">café</text>
+<text x="309" y="458" font-size="42" fill="#ffffff">señor</text>
+<text x="544" y="458" font-size="42" fill="#f7f2ed">über</text>
+<text x="943" y="364" font-size="230" fill="#ffbe98">Á</text>
+<path d="M905 407H1145" stroke="#5654c7" stroke-width="7" stroke-linecap="round"/>
+<text x="72" y="574" font-size="20" fill="#a4abc6">OMARCHY + HYPRLAND</text>
+<text x="1208" y="574" text-anchor="end" font-size="20" fill="#a4abc6">Your languages. Your desktop colors.</text>
+</g></svg>

@@ -27,6 +27,10 @@ _No response_
 
 ### Maintainer notes
 
+Accent helps users type accented names, multilingual text and symbols without
+memorizing compose sequences. Hold a letter, choose a character and keep typing.
+Language selection, theme-aware settings and bar controls make it fit Omarchy.
+
 Accent is an independent MIT-licensed derivative of Victor Masson's QuickAccent,
 with the original license and attribution preserved. One root manifest exposes
 plugin bjl.accent; its QML entry point is dist/omarchy/BarWidget.qml. The preview is

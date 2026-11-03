@@ -57,3 +57,20 @@ References (reviewed 2026-10-28):
 - https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SUBMISSION.md
 - https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SECURITY.md
 - https://opensource.org/license/mit
+
+## Preparation update — 2026-11-02
+
+- GitHub still reports PRIVATE; no Accent GitHub releases exist.
+- The existing commit `7ec947098e670de3a86883586d52ba8ca7ca7bc8` passed
+  Linux and macOS CI (run 40664406271). The new preparation changes still need CI.
+- Live marketplace registry checked: `bjl.accent` does not occur, including in
+  retired-ID data. This is not a reservation; check again immediately before submission.
+- README benefit-led copy, setup FAQ and original vector banner prepared.
+- Release notes no longer advertise the nonexistent Accent AUR package; install
+  commands explicitly select the release tag. Generated v1.4.0 notes checked locally.
+- Launch copy and GitHub metadata suggestions are in [LAUNCH_KIT.md](LAUNCH_KIT.md).
+- Local controller tests (4), distribution checks, Omarchy validation, installer
+  shell syntax and whitespace checks passed. No application source changed;
+  Rust tests and fresh desktop/manual installation were not rerun for this preparation.
+- Current marketplace submission contract re-read; the existing six headings,
+  category, tags and checklist text still match. No issue, tag or release created.
