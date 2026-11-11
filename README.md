@@ -15,9 +15,9 @@ character picker and bar controls to Omarchy, with colors that follow your deskt
 Watch Accent turn a held letter into an accented character, then explore the typing
 and language settings in this **89-second demo on Omarchy**.
 
-[![Accent’s character picker with ñ selected while typing Señor](assets/accent-demo.png)](assets/accent-demo.mp4)
+[![Accent’s character picker with ñ selected while typing Señor](assets/accent-demo.png)](assets/accent-demo.mp4?raw=true)
 
-**[▶ Watch the full demo](assets/accent-demo.mp4)** · Includes audio.
+**[▶ Watch the full demo](assets/accent-demo.mp4?raw=true)** · Includes audio.
 
 Hold a letter, choose an accent, and keep typing. The screenshot above is a cropped
 frame from the recording; click it to open the full video.
