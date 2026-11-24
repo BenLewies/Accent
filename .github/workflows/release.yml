@@ -153,7 +153,7 @@ jobs:
 
   publish:
     name: publish
-    needs: [linux, macos]
+    needs: [linux]
     permissions:
       contents: write
       id-token: write
@@ -165,13 +165,13 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
+          name: linux-x86_64
           path: artifacts
-          merge-multiple: true
 
       - name: Checksums
         run: |
           cd artifacts
-          sha256sum accent-linux-x86_64.tar.gz Accent-macos-universal.tar.gz > SHA256SUMS
+          sha256sum accent-linux-x86_64.tar.gz > SHA256SUMS
           cat SHA256SUMS
 
       - name: Attest build provenance
@@ -179,7 +179,6 @@ jobs:
         with:
           subject-path: |
             artifacts/accent-linux-x86_64.tar.gz
-            artifacts/Accent-macos-universal.tar.gz
 
       - name: List artifacts
         run: ls -la artifacts/
@@ -207,9 +206,6 @@ jobs:
           git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
           ACCENT_VERSION=${GITHUB_REF_NAME} Accent/dist/linux/install.sh
 
-          # macOS (universal)
-          git clone --branch ${GITHUB_REF_NAME} --depth 1 https://github.com/${{ github.repository }}
-          ACCENT_VERSION=${GITHUB_REF_NAME} Accent/dist/macos/install.sh
           \`\`\`
 
           On Omarchy, the Linux installer handles dependencies, active-session keyboard
@@ -229,8 +225,10 @@ jobs:
           | File | Platform |
           |------|----------|
           | \`accent-linux-x86_64.tar.gz\` | Linux x86_64 |
-          | \`Accent-macos-universal.tar.gz\` | macOS universal (arm64 + x86_64) |
-          | \`SHA256SUMS\` | Checksums of the two archives |
+          | \`SHA256SUMS\` | Checksums of the published archives |
+
+          The macOS universal archive is added separately after its platform build
+          succeeds. Wait for that asset to appear before using `dist/macos/install.sh`.
           EOF
           echo "--- release notes ---"; cat RELEASE_NOTES.md
 
@@ -245,7 +243,6 @@ jobs:
           body_path: RELEASE_NOTES.md
           files: |
             artifacts/accent-linux-x86_64.tar.gz
-            artifacts/Accent-macos-universal.tar.gz
             artifacts/SHA256SUMS
           fail_on_unmatched_files: true
         env:
@@ -275,21 +272,58 @@ jobs:
             | File | Platform |
             |------|----------|
             | `accent-linux-x86_64.tar.gz` | Linux x86_64 |
-            | `Accent-macos-universal.tar.gz` | macOS universal (arm64 + x86_64) |
+            The macOS archive is added after its separate platform build succeeds.
 
             ### Install
             Rolling builds are for testing. From a clone of `master`:
             ```bash
-            ACCENT_VERSION=continuous ./dist/linux/install.sh   # Linux
-            ACCENT_VERSION=continuous ./dist/macos/install.sh   # macOS
+            ./install.sh --from-source   # Omarchy source preview
+            ACCENT_VERSION=continuous ./dist/macos/install.sh   # macOS, once its asset is uploaded
             ```
             Verify an asset with `sha256sum -c --ignore-missing SHA256SUMS` or
             `gh attestation verify <asset> --repo ${{ github.repository }}`.
             For the stable install see the [README](https://github.com/${{ github.repository }}#install).
           files: |
             artifacts/accent-linux-x86_64.tar.gz
-            artifacts/Accent-macos-universal.tar.gz
             artifacts/SHA256SUMS
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  publish-macos:
+    name: add-macos-archive
+    needs: [macos, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: macos-universal
+          path: artifacts
+
+      - name: Attest macOS build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: artifacts/Accent-macos-universal.tar.gz
+
+      - name: Add macOS archive and checksum
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          else
+            RELEASE_TAG=continuous
+          fi
+          gh release download "$RELEASE_TAG" --pattern SHA256SUMS --dir artifacts
+          cd artifacts
+          # Retain the Linux checksum so the Omarchy installer keeps working.
+          python3 -c 'from pathlib import Path; p=Path("SHA256SUMS"); p.write_text("\n".join(line for line in p.read_text().splitlines() if not line.endswith("Accent-macos-universal.tar.gz")) + "\n")'
+          sha256sum Accent-macos-universal.tar.gz >> SHA256SUMS
+          gh release upload "$RELEASE_TAG" Accent-macos-universal.tar.gz SHA256SUMS --clobber
