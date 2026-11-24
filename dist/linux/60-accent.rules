@@ -1,3 +1,5 @@
 # Accent: grant keyboard and virtual-keyboard access to the active local session.
+# This file precedes 60-input-id.rules, so identify new event devices first.
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="", IMPORT{builtin}="input_id"
 SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_KEYBOARD}=="1", TAG+="uaccess"
 SUBSYSTEM=="misc", KERNEL=="uinput", OPTIONS+="static_node=uinput", TAG+="uaccess"

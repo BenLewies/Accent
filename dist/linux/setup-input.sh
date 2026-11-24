@@ -13,6 +13,8 @@ done
 # Do not add every user to the input group or make devices world-writable.
 cat > /etc/udev/rules.d/60-accent.rules <<'RULES'
 # Managed by Accent. Grant the active local session keyboard and uinput access.
+# This file precedes 60-input-id.rules, so identify new event devices first.
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="", IMPORT{builtin}="input_id"
 SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_KEYBOARD}=="1", TAG+="uaccess"
 SUBSYSTEM=="misc", KERNEL=="uinput", OPTIONS+="static_node=uinput", TAG+="uaccess"
 RULES

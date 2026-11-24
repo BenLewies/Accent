@@ -233,6 +233,16 @@ class InstallationTests(unittest.TestCase):
 
 
 class PermissionTests(unittest.TestCase):
+    def test_hotplug_identifies_keyboard_before_testing_its_properties(self):
+        # 60-accent sorts before the system's 60-input-id rule on fresh add events.
+        # Without this import, a keyboard connected later would never get its ACL.
+        for path in [ROOT / 'dist/linux/60-accent.rules', ROOT / 'dist/linux/setup-input.sh']:
+            rules = path.read_text()
+            identify = rules.index('IMPORT{builtin}="input_id"')
+            keyboard_access = rules.index('ENV{ID_INPUT_KEYBOARD}=="1"')
+            self.assertLess(identify, keyboard_access)
+            self.assertIn('TAG+="uaccess"', rules[keyboard_access:])
+
     def test_existing_access_does_not_elevate(self):
         with patch.object(installer, 'input_access', return_value=True), patch.object(installer, 'run') as run:
             installer.configure_input(ROOT)
