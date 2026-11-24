@@ -41,31 +41,40 @@ settings window share the choice; changes apply immediately and save automatical
 
 ## Install on Omarchy
 
-Install the plugin from this public GitHub repository. Marketplace listing and
-verification are separate from installation.
+Supported target: **Omarchy Quattro, Linux x86_64, in an active local desktop
+session**. Clone the release, review the source, then run its installer:
 
 ```bash
-omarchy plugin add https://github.com/BenLewies/Accent --enable
+git clone --branch v1.4.1 --depth 1 https://github.com/BenLewies/Accent.git
+cd Accent
+./install.sh
 ```
 
-The bar plugin requires the Accent daemon. It does **not** silently download,
-compile, or install privileged software. Until an Accent release is published,
-install from the reviewed source already cloned by the command above:
+This is the complete installation path. One installer handles:
 
-```bash
-cd ~/.config/omarchy/plugins/bjl.accent
-INSTALL_FROM_SOURCE=1 ./dist/linux/install.sh
-```
+- Required runtime packages through Omarchy’s package manager.
+- The matching prebuilt program, checked against the release checksum and source commit.
+- Keyboard and virtual-keyboard access for the active local session, with an administrator prompt when needed.
+- The user service, automatic startup, launcher, icons and licence notices.
+- The bar plugin, discovery and enablement.
+- Final checks for device access, a responding daemon, automatic startup, the enabled bar plugin and matching versions.
 
-Requires a Rust toolchain, a C compiler, pkg-config, and development libraries
-for X11/XInput/XTest, Wayland, xkbcommon, fontconfig, ALSA and graphics. On Arch,
-these come from the corresponding system packages; see [installation details](docs/INSTALL.md).
-The installer requests elevation for input-device rules/module setup and adds
-your user to the `input` group if necessary. A new login session or reboot may be
-needed for group changes. It installs a per-user service and launcher.
+You do **not** need Rust or a separate bar-plugin installation. The installer
+preserves your preferences, backs up replaced files, and restores the previous
+user installation if a later step fails. It does not add you to the `input` group;
+the session-based device rules normally take effect immediately without a reboot.
 
-Already have Accent? Add the bar plugin and use it immediately. The default
-plugin ID remains `bjl.accent` so existing installations retain their settings.
+Run it as your desktop user, without `sudo`. It explains the changes before
+continuing; only package installation and device setup request administrator access.
+For a source build, use `./install.sh --from-source`; it also installs build dependencies.
+[Detailed installation, recovery and removal](docs/INSTALL.md).
+
+Already installed the bar plugin from the marketplace? Run the complete installer
+above to supply the runtime and permissions as well. A clean existing plugin is
+upgraded with a backup; local Git changes must be committed or stashed first.
+The marketplace’s **Manual Setup** label remains accurate: Omarchy’s plugin-add
+command deliberately does not run installers or grant keyboard-device access.
+Installing or enabling the widget never silently downloads code or requests privileges.
 
 ## Use it
 
@@ -115,9 +124,8 @@ theme = "aurora-glass"
 # champagne-metal, graphite-gold, system
 ```
 
-Updating the plugin supplies the bar artwork and controls. If you are upgrading
-from an older Accent daemon, rebuild/reinstall the daemon as described in
-[Update & remove](#update--remove) to get the theme picker in Settings.
+Use the complete installer when upgrading so the bar plugin and background
+program stay on the same release. See [Update & remove](#update--remove).
 
 ## Permissions, privacy & limits
 
@@ -153,22 +161,34 @@ Clipboard fallback and terminal limitations are described above.
 
 ## Update & remove
 
-Update the plugin using `omarchy plugin update bjl.accent`. When the daemon source
-changes, review it and rerun the source installer, then `systemctl --user restart accent`.
-User settings live in `~/.config/accent/config.toml` and are retained.
+For an update, check out the new release in your original Accent clone and rerun
+`./install.sh`. It upgrades both the program and bar plugin, restarts the service,
+and checks the result. Running the same release again also repairs an incomplete
+installation. Your settings in `~/.config/accent/config.toml` are retained.
+
+Check an installation without changing it:
 
 ```bash
-omarchy plugin disable bjl.accent
-omarchy plugin remove bjl.accent
+./install.sh --check
+```
+
+The command reports each readiness check and exits unsuccessfully if any is missing.
+Updating only the bar through `omarchy plugin update bjl.accent` does not update
+the native program; use the release installer for complete upgrades.
+
+To remove the user installation while keeping preferences:
+
+```bash
 systemctl --user disable --now accent.service
+omarchy plugin remove bjl.accent
 rm -f ~/.local/bin/accent ~/.local/share/applications/accent.desktop
 rm -f ~/.config/systemd/user/accent.service
 systemctl --user daemon-reload
 ```
 
-These commands retain settings and license notices. See [complete removal](docs/INSTALL.md#removal)
-for optional icons, renderer override, and device-rule cleanup. Never remove your
-`input` group membership if another application needs it.
+See [complete removal](docs/INSTALL.md#removal) for icons, notices, backups and
+administrator-owned device rules. Existing input-group membership from older
+installations is preserved; do not remove it if another application needs it.
 
 ## Source, support & attribution
 

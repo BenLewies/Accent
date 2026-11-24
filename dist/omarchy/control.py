@@ -25,7 +25,7 @@ def main(action):
         binary = Path.home() / '.local/bin/accent'
         if not binary.is_file():
             found = shutil.which('accent')
-            if not found: raise RuntimeError('Install the Accent daemon first; see the plugin README.')
+            if not found: raise RuntimeError('Run ./install.sh from a reviewed Accent release checkout to complete installation.')
             binary = Path(found)
         systemctl('start')
         for _ in range(30):

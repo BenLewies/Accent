@@ -1,6 +1,6 @@
 [package]
 name = "accent"
-version = "1.4.0"
+version = "1.4.1"
 edition = "2021"
 description = "Accents and symbols without breaking your flow — a character picker with Omarchy bar controls"
 license = "MIT"

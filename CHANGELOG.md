@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.1
+
+- Complete Omarchy installer for the runtime, dependencies, active-session device
+  access, launcher, automatic startup and bar plugin.
+- Version/source-matched release packages with strict checksums and build provenance
+  checks when an authenticated GitHub CLI is available.
+- Readiness checks, upgrade backups and rollback of user files on installation failure.
+- Session-based keyboard permissions without new input-group membership or a reboot.
+- Six coordinated themes, Aurora glass by default, and updated documentation/screenshots.
+
 ## 1.4.0 — unreleased Accent debut
 
 - Linux long-press activation alongside Space/arrows.

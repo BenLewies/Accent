@@ -26,5 +26,10 @@ import tomllib
 assert manifest['version'] == tomllib.loads((root / 'Cargo.toml').read_text())['package']['version'], 'Plugin and binary versions must agree'
 assert '--daemon' in (root / 'dist/linux/accent.service').read_text()
 assert 'Exec=accent --settings' in (root / 'dist/linux/accent.desktop').read_text()
-assert 'ExecStart=$BIN_DIR/accent --daemon' in (root / 'dist/linux/install.sh').read_text()
+assert (root / 'install.sh').is_file()
+installer = (root / 'dist/linux/install.py').read_text()
+assert 'verify_checksum' in installer and 'extract_package' in installer
+assert 'omarchy' in installer and 'configure_input' in installer
+assert 'BUILD.json' in workflow
+assert 'ICED_BACKEND=tiny-skia' in (root / 'dist/linux/accent.service').read_text()
 print('Listing structure, attribution, distribution notices, and launch modes: OK')

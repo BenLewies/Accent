@@ -65,6 +65,7 @@ jobs:
           STAGE=accent-linux-x86_64
           mkdir -p "$STAGE"
           cp target/release/accent "$STAGE/"
+          python3 -c 'import json, os, tomllib; print(json.dumps({"version": tomllib.load(open("Cargo.toml", "rb"))["package"]["version"], "commit": os.environ["GITHUB_SHA"]}))' > "$STAGE/BUILD.json"
           cp dist/linux/accent.service "$STAGE/"
           cp dist/linux/accent.desktop "$STAGE/"
           cp dist/linux/60-accent.rules "$STAGE/"
@@ -197,13 +198,11 @@ jobs:
           ACCENT_VERSION=${GITHUB_REF_NAME} Accent/dist/macos/install.sh
           \`\`\`
 
-          Omarchy bar controls are installed separately:
+          On Omarchy, the Linux installer handles dependencies, active-session keyboard
+          permissions, the daemon, automatic startup, launcher and bar plugin together.
+          It checks the complete installation before reporting success.
 
-          \`\`\`bash
-          omarchy plugin add https://github.com/${{ github.repository }} --enable
-          \`\`\`
-
-          See the README for input-device permissions, dependencies and removal.
+          See the README for permissions, health checks, updates and removal.
           No Accent AUR package is currently published.
 
           ## Verify an asset

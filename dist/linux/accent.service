@@ -9,6 +9,7 @@ Type=simple
 ExecStart=/usr/bin/accent --daemon
 Restart=on-failure
 RestartSec=2
+Environment=ICED_BACKEND=tiny-skia
 Environment=PATH=/usr/bin:/usr/local/bin:%h/.local/bin
 
 [Install]

@@ -6,7 +6,10 @@ not this subdirectory. See ../../README.md for installation and removal instruct
 Left-click **Á** opens settings (starting the daemon if paused). Right-click offers
 pause/start, restart and automatic-startup controls. The font follows the Omarchy shell; the icon follows Accent’s chosen theme. Python 3 and a working Accent user service are required. The controller
 uses a fixed action allowlist, bounded subprocess calls and no shell interpolation.
-It does not install the daemon automatically. Missing-daemon errors point to setup.
+The widget does not install the daemon automatically. For the complete supported
+path, run `./install.sh` from a reviewed Accent release checkout; this installs the
+daemon, dependencies, permissions and bar plugin together. `./install.sh --check`
+checks readiness without changing anything. Missing-daemon errors point to setup.
 
 
 The bar badge follows **Accent Settings → Appearance**. All six bundled SVG
