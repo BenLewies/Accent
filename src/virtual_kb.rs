@@ -45,6 +45,11 @@ pub fn init() -> Result<(), String> {
         .map_err(|_| "virtual keyboard already initialized".to_string())
 }
 
+/// Installer readiness must distinguish a running UI from a usable input backend.
+pub fn is_ready() -> bool {
+    DEVICE.get().is_some()
+}
+
 /// Emit key events, each in its own SYN_REPORT frame so modifier state is
 /// applied strictly in order by the compositor. Never emits autorepeat
 /// (value 2) — clients synthesize repeats themselves.

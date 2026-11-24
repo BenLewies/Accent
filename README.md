@@ -57,7 +57,7 @@ This is the complete installation path. One installer handles:
 - Keyboard and virtual-keyboard access for the active local session, with an administrator prompt when needed.
 - The user service, automatic startup, launcher, icons and licence notices.
 - The bar plugin, discovery and enablement.
-- Final checks for device access, a responding daemon, automatic startup, the enabled bar plugin and matching versions.
+- Final checks for device access, a responding daemon with a working virtual keyboard, automatic startup, the enabled bar plugin and matching versions.
 
 You do **not** need Rust or a separate bar-plugin installation. The installer
 preserves your preferences, backs up replaced files, and restores the previous

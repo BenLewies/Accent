@@ -287,6 +287,10 @@ def health(home):
               'daemon_responding': run('busctl', '--user', '--timeout=2', 'call', 'io.github.BenLewies.Accent',
                   '/io/github/BenLewies/Accent', 'org.freedesktop.DBus.Peer', 'Ping',
                   check=False, capture_output=True).returncode == 0}
+    readiness = run('busctl', '--user', '--timeout=2', 'call', 'io.github.BenLewies.Accent',
+        '/io/github/BenLewies/Accent', 'io.github.BenLewies.Accent', 'InputReady',
+        check=False, capture_output=True)
+    checks['virtual_keyboard'] = readiness.returncode == 0 and readiness.stdout.strip() == 'b true'
     try:
         plugins = json.loads(capture('omarchy', 'plugin', 'list', '--json'))
         checks['bar_plugin'] = any(p.get('id') == 'bjl.accent' and p.get('enabled') for p in plugins)

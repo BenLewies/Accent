@@ -12,6 +12,10 @@ impl Service {
         crate::app::request(crate::app::UiEvent::OpenSettings);
     }
 
+    fn input_ready(&self) -> bool {
+        crate::virtual_kb::is_ready()
+    }
+
     fn quit(&self) {
         crate::app::request(crate::app::UiEvent::Quit);
     }

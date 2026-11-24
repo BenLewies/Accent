@@ -28,7 +28,7 @@ Existing local Git changes block replacement. A legacy non-Git Accent plugin is
 backed up before replacement. Settings in `~/.config/accent/config.toml` are preserved.
 
 Before reporting success it checks keyboard/uinput access, the enabled user service,
-a responding D-Bus daemon, the enabled bar plugin and matching runtime/plugin versions.
+a responding D-Bus daemon with an initialized virtual keyboard, the enabled bar plugin and matching runtime/plugin versions.
 The service uses the software renderer by default to avoid GPU-specific startup errors.
 No settings window opens during background service startup.
 

@@ -131,6 +131,8 @@ class InstallationTests(unittest.TestCase):
             self.state['active'] = True
         elif args[:3] == ['systemctl', '--user', 'stop']:
             self.state['active'] = False
+        elif args[0] == 'busctl' and args[-1] == 'InputReady':
+            output = 'b true'
         elif args[:4] == ['omarchy', 'plugin', 'list', '--json']:
             output = json.dumps([{'id': 'bjl.accent', 'enabled': self.state['plugin_enabled']}])
         elif args[:3] == ['omarchy', 'plugin', 'enable']:
@@ -263,6 +265,7 @@ class PermissionTests(unittest.TestCase):
             checks = installer.health(Path('/nonexistent'))
             self.assertTrue(checks['service'])
             self.assertFalse(checks['keyboard_access'])
+            self.assertFalse(checks['virtual_keyboard'])
             self.assertFalse(all(checks.values()))
 
 
