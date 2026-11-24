@@ -1,6 +1,5 @@
 use iced::futures::SinkExt;
 use iced::widget::{checkbox, column, container, pick_list, row, scrollable, slider, text, button, text_input};
-use iced::widget::{column as column_of, row as row_of};
 
 use crate::config::{ActivationKey, ThemeChoice};
 use iced::window;
@@ -302,6 +301,7 @@ mod tests {
         let mut app = App {
             settings_page: SettingsPage::Typing,
             language_search: String::new(),
+            theme_error: None,
             items_per_page: 1,
             grid: false,
             show_unicode_description: true,
@@ -312,7 +312,7 @@ mod tests {
             settings_window: None,
             languages: Vec::new(),
             desktop_palette: None,
-            theme_choice: ThemeChoice::Dark,
+            theme_choice: ThemeChoice::AuroraGlass,
             theme_light: ThemeChoice::Light,
             theme_dark: ThemeChoice::Dark,
             overlay_scale: 1.0,
@@ -577,9 +577,6 @@ pub enum Message {
     SearchLanguages(String),
     RefreshDesktopAppearance,
     SetTheme(ThemeChoice),
-    /// Palettes used while `SetTheme(System)` (light / dark desktop).
-    SetThemeLight(ThemeChoice),
-    SetThemeDark(ThemeChoice),
     SetHoldDelay(f32),
     SetInputTime(f32),
     SetActivationKey(ActivationKey),
@@ -611,6 +608,7 @@ fn background_start_never_opens_settings() {
 pub struct App {
     settings_page: SettingsPage,
     language_search: String,
+    theme_error: Option<String>,
     items_per_page: usize,
     /// The open picker is laid out as a grid (Down arrow).
     grid: bool,
@@ -700,6 +698,7 @@ impl App {
             App {
                 settings_page: SettingsPage::Typing,
                 language_search: String::new(),
+                theme_error: None,
                 items_per_page,
                 grid: false,
                 show_unicode_description,
@@ -727,17 +726,10 @@ impl App {
     }
 
     fn resolve_dark(&self) -> bool {
+        if self.theme_choice == ThemeChoice::System {
+            if let Some(palette) = &self.desktop_palette { return palette.is_dark(); }
+        }
         resolve_dark(self.theme_choice, self.theme_light, self.theme_dark)
-    }
-
-    /// The palette drawn right now (see `theme::effective`).
-    fn effective_theme(&self) -> ThemeChoice {
-        crate::theme::effective(
-            self.theme_choice,
-            self.theme_light,
-            self.theme_dark,
-            crate::theme::is_dark(self.theme_choice),
-        )
     }
 
     /// Keep the settings window's native chrome (title bar) on the resolved
@@ -932,27 +924,16 @@ impl App {
                 Task::none()
             }
             Message::SetTheme(choice) => {
+                if let Err(e) = crate::config::set_theme(choice) {
+                    self.theme_error = Some(format!("Could not save theme: {e}"));
+                    return Task::none();
+                }
+                self.theme_error = None;
+                if choice == ThemeChoice::System {
+                    self.desktop_palette = crate::theme::desktop_palette();
+                }
                 self.theme_choice = choice;
                 self.dark = self.resolve_dark();
-                if let Err(e) = crate::config::set_theme(choice) {
-                    eprintln!("[Accent] Failed to save theme: {e}");
-                }
-                self.sync_settings_appearance()
-            }
-            Message::SetThemeLight(choice) => {
-                self.theme_light = choice;
-                self.dark = self.resolve_dark();
-                if let Err(e) = crate::config::set_theme_light(choice) {
-                    eprintln!("[Accent] Failed to save theme_light: {e}");
-                }
-                self.sync_settings_appearance()
-            }
-            Message::SetThemeDark(choice) => {
-                self.theme_dark = choice;
-                self.dark = self.resolve_dark();
-                if let Err(e) = crate::config::set_theme_dark(choice) {
-                    eprintln!("[Accent] Failed to save theme_dark: {e}");
-                }
                 self.sync_settings_appearance()
             }
             Message::SetHoldDelay(ms) => {
@@ -1039,7 +1020,8 @@ impl App {
                         self.desktop_palette = Some(palette);
                     }
                 }
-                Task::none()
+                self.dark = self.resolve_dark();
+                self.sync_settings_appearance()
             }
             Message::Noop => Task::none(),
         }
@@ -1097,9 +1079,9 @@ impl App {
                 .into();
         }
 
-        let colors = self.desktop_palette.as_ref()
-            .map(|palette| palette.overlay(self.overlay_opacity))
-            .unwrap_or_else(|| crate::theme::overlay_colors(self.effective_theme(), self.dark, self.overlay_opacity));
+        let colors = crate::theme::resolved_overlay(self.theme_choice, self.theme_light,
+            self.theme_dark, self.desktop_palette.as_ref(), self.dark, self.overlay_opacity);
+        let design_choice = self.theme_choice;
         let chip = colors.chip;
         let chip_text = colors.chip_text;
         let selected = colors.selected;
@@ -1120,11 +1102,9 @@ impl App {
 
             let cell = container(label).padding([8.0, CELL_PADDING]).style(
                 move |_theme: &Theme| container::Style {
-                    background: Some(iced::Background::Color(if is_selected {
-                        selected
-                    } else {
-                        chip
-                    })),
+                    background: Some(if is_selected {
+                        crate::theme::selection_background(design_choice, selected)
+                    } else { iced::Background::Color(chip) }),
                     border: iced::Border {
                         radius: chip_radius.into(),
                         ..Default::default()
@@ -1178,7 +1158,7 @@ impl App {
         .center_x(Length::Fill)
         .center_y(Length::Fill)
         .style(move |_theme: &Theme| container::Style {
-            background: panel.map(iced::Background::Color),
+            background: panel.map(|base| crate::theme::panel_background(design_choice, base)),
             border: iced::Border {
                 radius: overlay_radius.into(),
                 ..Default::default()
@@ -1253,41 +1233,61 @@ impl App {
             .into()
         };
 
-        // Following the system: choose what "light" and "dark" mean.
-        let system_palettes: Vec<Element<'_, Message>> = if self.desktop_palette.is_none() && self.theme_choice == ThemeChoice::System {
-            vec![row_of![
-                column_of![
-                    text("Light desktop").size(13),
-                    pick_list(ThemeChoice::PALETTES, Some(self.theme_light), Message::SetThemeLight)
-                        .width(Length::Fill),
-                ]
-                .spacing(4)
-                .width(Length::Fill),
-                column_of![
-                    text("Dark desktop").size(13),
-                    pick_list(ThemeChoice::PALETTES, Some(self.theme_dark), Message::SetThemeDark)
-                        .width(Length::Fill),
-                ]
-                .spacing(4)
-                .width(Length::Fill),
-            ]
-            .spacing(12)
-            .into()]
-        } else {
-            Vec::new()
-        };
+        let theme_cards = ThemeChoice::ALL.chunks(2).map(|choices| {
+            let mut cards: Vec<Element<'_, Message>> = choices.iter().map(|&choice| {
+                let selected = self.theme_choice == choice;
+                let palette = crate::theme::resolved_theme(choice, self.theme_light, self.theme_dark,
+                    self.desktop_palette.as_ref(), self.dark).palette();
+                let design = crate::theme::design(choice);
+                let system_swatch = container(text("Á").size(34).font(iced::Font {
+                    weight: iced::font::Weight::Bold, ..iced::Font::DEFAULT
+                }))
+                    .center_x(54).center_y(54)
+                    .style(move |_| container::Style {
+                        background: Some(design.map(|d| crate::theme::gradient(d.top, d.bottom))
+                            .unwrap_or_else(|| palette.background.into())),
+                        text_color: Some(design.map(|d| d.ink).unwrap_or(palette.primary)),
+                        border: iced::Border { radius: 12.0.into(), width: 1.0,
+                            color: Color { a: 0.4, ..palette.primary } },
+                        ..Default::default()
+                    });
+                let swatch: Element<'_, Message> = match crate::theme::icon(choice) {
+                    Some(handle) => iced::widget::image(handle).width(54).height(54).into(),
+                    None => system_swatch.into(),
+                };
+                let caption = column(vec![
+                    text(choice.label()).size(13).into(),
+                    text(design.map(|d| d.finish).unwrap_or("Follows your desktop colours")).size(11).into(),
+                    text(if selected { "Selected" } else { "Choose theme" }).size(11).into(),
+                ]).spacing(5);
+                button(row(vec![swatch.into(), caption.into()]).spacing(12).align_y(iced::Alignment::Center))
+                    .on_press(Message::SetTheme(choice)).padding(12).width(Length::Fill)
+                    .style(move |theme: &Theme, status| {
+                        let p = theme.palette();
+                        let surface = crate::theme::design(self.theme_choice).map(|d| d.surface)
+                            .unwrap_or(theme.extended_palette().background.weak.color);
+                        let mut style = button::Style {
+                            background: Some(Color { a: if matches!(status, button::Status::Hovered) { 1.0 } else { 0.78 }, ..surface }.into()),
+                            text_color: p.text,
+                            ..Default::default()
+                        };
+                        style.border = iced::Border { radius: 12.0.into(),
+                            width: if selected { 2.0 } else { 1.0 },
+                            color: if selected { theme.palette().primary }
+                                else { Color { a: 0.16, ..theme.palette().text } } };
+                        style
+                    }).into()
+            }).collect();
+            if cards.len() == 1 { cards.push(iced::widget::Space::with_width(Length::Fill).into()); }
+            row(cards).spacing(12).into()
+        });
         let appearance: Element<'_, Message> = column(vec![
-            text("Appearance").size(15).into(),
-            if self.desktop_palette.is_some() {
-                text("Following the active Omarchy desktop theme automatically.").size(13).into()
-            } else {
-                pick_list(ThemeChoice::ALL, Some(self.theme_choice), Message::SetTheme)
-                    .width(Length::Fill).into()
-            },
-        ]
-        .into_iter()
-        .chain(system_palettes)
-        .chain(vec![
+            text("Choose a theme").size(15).into(),
+            text(self.theme_error.as_deref().unwrap_or("One choice for your bar icon, character picker and settings. Changes apply immediately."))
+                .size(13).style(move |theme: &Theme| text::Style {
+                    color: Some(if self.theme_error.is_some() { theme.palette().danger } else { theme.palette().text }),
+                }).into(),
+            column(theme_cards).spacing(12).into(),
             settings_slider(
                 "Overlay opacity",
                 format!("{:.0}%", self.overlay_opacity * 100.0),
@@ -1309,8 +1309,7 @@ impl App {
                 slider(0.0..=16.0, self.chip_radius, Message::SetChipRadius).into(),
             ),
         ])
-        .collect::<Vec<Element<'_, Message>>>())
-        .spacing(10)
+        .spacing(16)
         .into();
 
         let behaviour: Element<'_, Message> = column(vec![
@@ -1377,7 +1376,7 @@ impl App {
             SettingsPage::Languages => language_page,
             SettingsPage::Appearance => column(vec![
                 text("At home on your desktop").size(24).into(),
-                text("The picker and settings share your desktop colors.").size(14).into(),
+                text("Six button designs, or follow your operating system.").size(14).into(),
                 appearance,
             ]).spacing(20).into(),
             SettingsPage::About => column(vec![
@@ -1410,8 +1409,8 @@ impl App {
             text("Changes save automatically · Closing settings keeps Accent running.").size(12).into(),
         ]).spacing(24).padding(24).height(Length::Fill);
         container(body).width(Length::Fill).height(Length::Fill)
-            .style(|theme: &Theme| container::Style {
-                background: Some(iced::Background::Color(theme.palette().background)),
+            .style(move |theme: &Theme| container::Style {
+                background: Some(crate::theme::panel_background(self.theme_choice, theme.palette().background)),
                 ..Default::default()
             }).into()
     }
@@ -1420,7 +1419,7 @@ impl App {
         Subscription::batch([
             Subscription::run(grab_subscription),
             Subscription::run(ui_subscription),
-            if self.desktop_palette.is_some() {
+            if self.theme_choice == ThemeChoice::System {
                 iced::time::every(std::time::Duration::from_millis(500))
                     .map(|_| Message::RefreshDesktopAppearance)
             } else { Subscription::none() },
@@ -1445,8 +1444,8 @@ impl App {
     }
 
     pub fn theme(&self, _window_id: window::Id) -> Theme {
-        self.desktop_palette.as_ref().map(|palette| palette.theme())
-            .unwrap_or_else(|| crate::theme::iced_theme(self.effective_theme(), self.dark))
+        crate::theme::resolved_theme(self.theme_choice, self.theme_light, self.theme_dark,
+            self.desktop_palette.as_ref(), self.dark)
     }
 
     /// Window backgrounds. The picker is see-through so rounded corners and

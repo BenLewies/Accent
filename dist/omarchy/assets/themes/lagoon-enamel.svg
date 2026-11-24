@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Accent: Lagoon enamel">
+ <defs>
+ <linearGradient id="face" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#5cf6d1"/><stop offset=".48" stop-color="#078a91"/><stop offset="1" stop-color="#04525e"/></linearGradient>
+ <linearGradient id="rim" x2=".5" y2="1"><stop stop-color="#5cf6d1"/><stop offset=".4" stop-color="#04525e"/><stop offset="1" stop-color="#0b121b"/></linearGradient>
+ <linearGradient id="gloss" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+ <radialGradient id="cyan"><stop stop-color="#59efd9" stop-opacity=".9"/><stop offset="1" stop-color="#59efd9" stop-opacity="0"/></radialGradient>
+ <radialGradient id="pink"><stop stop-color="#fca4de" stop-opacity=".85"/><stop offset="1" stop-color="#fca4de" stop-opacity="0"/></radialGradient>
+ <pattern id="knurl" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0L5 5M-5 0L0 5M5 0L10 5" stroke="#fff" stroke-opacity=".09" stroke-width=".6"/><path d="M5 0L0 5" stroke="#000" stroke-opacity=".16" stroke-width=".6"/></pattern>
+ <clipPath id="clip"><rect x="19" y="17" width="218" height="218" rx="46"/></clipPath>
+ </defs>
+ <rect x="12" y="17" width="232" height="232" rx="54" fill="#080d14" opacity=".18"/>
+ <rect x="12" y="10" width="232" height="232" rx="54" fill="url(#rim)"/>
+ <rect x="18" y="16" width="220" height="220" rx="47" fill="url(#face)"/>
+ <g clip-path="url(#clip)"><path d="M22 103V65Q22 22 65 22H191Q234 22 234 65V83Q121 124 22 103Z" fill="url(#gloss)"/></g>
+ <rect x="19" y="17" width="218" height="218" rx="46" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="1.5"/>
+ <path d="M 65,201 L 109,86 L 144,86 L 189,201 L 158,201 L 149,175 L 105,175 L 96,201 Z M 113,151 L 141,151 L 127,111 Z M 115,67 L 136,38 L 167,38 L 140,67 Z" fill="#000" fill-opacity=".20" fill-rule="evenodd" transform="translate(0 2)"/>
+ <path d="M 65,201 L 109,86 L 144,86 L 189,201 L 158,201 L 149,175 L 105,175 L 96,201 Z M 113,151 L 141,151 L 127,111 Z M 115,67 L 136,38 L 167,38 L 140,67 Z" fill="#f5fffc" fill-rule="evenodd"/>
+ </svg>

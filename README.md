@@ -6,9 +6,10 @@
 
 Write **café**, **señor**, and **über** with the letters already on your keyboard.
 Hold a letter, choose its accent, and keep typing. Accent brings a configurable
-character picker and bar controls to Omarchy, with colors that follow your desktop.
+character picker and bar controls to Omarchy. Choose from six coordinated button
+themes, or match your operating system’s colours.
 
-[Watch the demo](#see-it-in-action) · [Install](#install-on-omarchy) · [How it works](#use-it) · [Character sets](docs/CHARACTERS.md) · [Get help](https://github.com/BenLewies/Accent/issues)
+[Watch the demo](#see-it-in-action) · [Install](#install-on-omarchy) · [How it works](#use-it) · [Themes](#themes) · [Character sets](docs/CHARACTERS.md) · [Get help](https://github.com/BenLewies/Accent/issues)
 
 ## See it in action
 
@@ -22,24 +23,26 @@ and language settings in this **89-second demo on Omarchy**.
 Hold a letter, choose an accent, and keep typing. The screenshot above is a cropped
 frame from the recording; click it to open the full video.
 
-### Theme-aware settings
+### Theme picker
 
-![Accent appearance settings on Omarchy, with opacity and corner-radius controls](preview.png)
+![Accent’s Appearance settings with all six button designs and Match operating system; Aurora glass selected](assets/theme-picker.png)
+
+Choose a design in **Settings → Appearance**. The bar icon, character selector and
+settings window share the choice; changes apply immediately and save automatically.
 
 ## Why Accent?
 
 - **Hold, choose, release.** Long press alone or combine it with Space/arrow triggers.
 - **Your languages, your picker.** Search language and symbol sets; keep only what you use.
-- **A natural fit.** Picker, settings, and bar controls follow the active Omarchy colors.
+- **Seven appearance choices.** Six button designs plus **Match operating system**; one choice for the bar icon, character picker and settings.
 - **Stay in control.** Click **Á** for settings; right-click to pause, restart, or change startup.
 - **Quiet by default.** The service starts in the background. Settings open only on request.
 - **Local processing.** No account, analytics, or keystroke logging in Accent.
 
 ## Install on Omarchy
 
-**Publication status:** this repository is being prepared for public release and
-marketplace review. It is not currently listed or verified. The GitHub plugin-add
-command below becomes available to everyone when the repository is made public.
+Install the plugin from this public GitHub repository. Marketplace listing and
+verification are separate from installation.
 
 ```bash
 omarchy plugin add https://github.com/BenLewies/Accent --enable
@@ -72,9 +75,49 @@ plugin ID remains `bjl.accent` so existing installations retain their settings.
 4. Press Escape to cancel, or Down to expand into a grid.
 
 Changes save automatically. **Languages** filters available sets, **Appearance**
-controls picker shape and transparency, and **About** shows provenance and privacy.
+chooses the theme and controls picker shape and transparency, and **About** shows
+provenance and privacy.
 Closing settings leaves the service running. `accent --settings` opens settings;
 `accent --daemon` starts quietly.
+
+## Themes
+
+Open **Settings → Appearance** and choose a card:
+
+| Option | Design | Finish |
+| --- | --- | --- |
+| 01 | Lagoon enamel | Teal gradient with polished enamel |
+| 02 | Cobalt satin | Blue gradient with a satin finish |
+| **03** | **Aurora glass — default** | **Violet, pink and cyan iridescence** |
+| 04 | Terracotta clay | Warm coral with a fine matte texture |
+| 05 | Champagne metal | Gold gradient with brushed aluminium |
+| 06 | Graphite gold | Charcoal with a machined texture and gold Á |
+| System | Match operating system | Your desktop’s current colours |
+
+The **Á** mark stays visible in every design. The bar badge uses the selected
+button artwork; the popup character selector and settings window use matching
+surface, accent and selection colours. The choice is saved in
+`~/.config/accent/config.toml` and survives restarts.
+
+![Accent’s popup character selector using Aurora glass colours](assets/character-picker-aurora.png)
+
+**Match operating system** follows Omarchy’s active background, foreground, accent
+and selection colours live, including the bar badge. On other supported desktops,
+it follows the system’s light/dark preference. Existing explicit theme settings
+are retained; new configurations default to **03 — Aurora glass**.
+
+To choose a theme by editing the configuration, set one of these values:
+
+```toml
+# Default: Aurora glass
+theme = "aurora-glass"
+# Other choices: lagoon-enamel, cobalt-satin, terracotta-clay,
+# champagne-metal, graphite-gold, system
+```
+
+Updating the plugin supplies the bar artwork and controls. If you are upgrading
+from an older Accent daemon, rebuild/reinstall the daemon as described in
+[Update & remove](#update--remove) to get the theme picker in Settings.
 
 ## Permissions, privacy & limits
 

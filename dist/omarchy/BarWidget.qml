@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
+import "Theme.js" as AccentTheme
 
 BarWidget {
     id: root
@@ -13,6 +14,15 @@ BarWidget {
     property string error: ""
     property bool menuOpen: false
     property string response: ""
+    property string themeId: "aurora-glass"
+    readonly property bool systemTheme: themeId === "system"
+    FileView {
+        path: Quickshell.env("HOME") + "/.config/accent/config.toml"
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.themeId = AccentTheme.fromConfig(text())
+        onFileChanged: reload()
+    }
     readonly property bool running: serviceState === "active"
     implicitWidth: button.implicitWidth
     implicitHeight: button.implicitHeight
@@ -25,7 +35,7 @@ BarWidget {
     }
     IpcHandler {
         target: "bjl.accent"
-        function status(): string { return JSON.stringify({state: root.serviceState, autostart: root.autostart, error: root.error}) }
+        function status(): string { return JSON.stringify({state: root.serviceState, autostart: root.autostart, theme: root.themeId, error: root.error}) }
         function settings(): void { root.request("settings") }
         function menu(): void { root.menuOpen = !root.menuOpen }
     }
@@ -52,11 +62,48 @@ BarWidget {
         id: button
         anchors.fill: parent
         bar: root.bar
-        text: "Á"
+        text: ""
+        labelVisible: false
+        hasVisualContent: true
+        fixedWidth: root.vertical ? root.barSize : Style.bar.iconSlot
+        fixedHeight: root.vertical ? Style.bar.iconSlot : root.barSize
+        readonly property real badgeSize: Math.max(12, Math.min(Style.space(24), root.barSize - Style.space(6)))
+        Image {
+            anchors.centerIn: parent
+            width: button.badgeSize
+            height: width
+            visible: !root.systemTheme
+            source: visible ? Qt.resolvedUrl("assets/themes/" + root.themeId + ".svg") : ""
+            sourceSize.width: Math.ceil(width * 2)
+            sourceSize.height: Math.ceil(height * 2)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            scale: button.pressScale
+        }
+        Rectangle {
+            anchors.centerIn: parent
+            width: button.badgeSize * 0.91
+            height: width
+            visible: root.systemTheme
+            radius: width * 0.21
+            color: Color.background
+            border.color: Color.accent
+            border.width: 1
+            scale: button.pressScale
+            Text {
+                anchors.centerIn: parent
+                textFormat: Text.PlainText
+                text: "Á"
+                font.family: Style.font.family
+                font.pixelSize: parent.height * 0.78
+                font.bold: true
+                color: Color.foreground
+            }
+        }
         dimmed: !root.running
-        tooltipText: "Accent — " + (root.running ? "running" : root.serviceState)
+        tooltipText: "Accent — " + (root.running ? "running" : AccentTheme.plain(root.serviceState))
                      + "\nClick: settings · Right-click: controls"
-                     + (root.error ? "\n" + root.error : "")
+                     + (root.error ? "\n" + AccentTheme.plain(root.error) : "")
         onPressed: function(mouseButton) {
             if (mouseButton === Qt.RightButton) root.menuOpen = !root.menuOpen
             else if (mouseButton === Qt.LeftButton) root.request("settings")
@@ -76,6 +123,7 @@ BarWidget {
             spacing: Style.space(6)
             Keys.onEscapePressed: root.close()
             Text {
+                textFormat: Text.PlainText
                 text: "Accent · " + (root.running ? "Running" : root.serviceState)
                 color: Color.foreground
                 font.family: Style.font.family
@@ -94,6 +142,7 @@ BarWidget {
                     enabled: !control.running
                     text: modelData.label
                     contentItem: Text {
+                        textFormat: Text.PlainText
                         text: parent.text
                         color: Color.foreground
                         font.family: Style.font.family
@@ -108,6 +157,7 @@ BarWidget {
                 }
             }
             Text {
+                textFormat: Text.PlainText
                 width: parent.width
                 visible: root.error.length > 0
                 text: root.error

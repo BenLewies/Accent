@@ -63,6 +63,7 @@ jobs:
         run: |
           python3 scripts/check_distribution.py
           python3 -m unittest discover -s tests
+          node tests/test_bar_theme.cjs
 
       - name: Test
         run: cargo test --all-targets --locked

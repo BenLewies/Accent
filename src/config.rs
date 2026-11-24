@@ -58,6 +58,12 @@ impl std::fmt::Display for ActivationKey {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThemeChoice {
     System,
+    LagoonEnamel,
+    CobaltSatin,
+    AuroraGlass,
+    TerracottaClay,
+    ChampagneMetal,
+    GraphiteGold,
     Light,
     Dark,
     Dracula,
@@ -85,24 +91,22 @@ impl ThemeChoice {
         ThemeChoice::RosePineDawn,
     ];
 
-    pub const ALL: [ThemeChoice; 11] = [
-        ThemeChoice::System,
-        ThemeChoice::Light,
-        ThemeChoice::Dark,
-        ThemeChoice::Dracula,
-        ThemeChoice::CatppuccinLatte,
-        ThemeChoice::CatppuccinFrappe,
-        ThemeChoice::CatppuccinMacchiato,
-        ThemeChoice::CatppuccinMocha,
-        ThemeChoice::RosePine,
-        ThemeChoice::RosePineMoon,
-        ThemeChoice::RosePineDawn,
+    /// The six button designs and the desktop-following option shown in Settings.
+    pub const ALL: [ThemeChoice; 7] = [
+        Self::LagoonEnamel, Self::CobaltSatin, Self::AuroraGlass,
+        Self::TerracottaClay, Self::ChampagneMetal, Self::GraphiteGold, Self::System,
     ];
 
     /// The value written to `config.toml`.
     pub fn as_str(self) -> &'static str {
         match self {
             ThemeChoice::System => "system",
+            Self::LagoonEnamel => "lagoon-enamel",
+            Self::CobaltSatin => "cobalt-satin",
+            Self::AuroraGlass => "aurora-glass",
+            Self::TerracottaClay => "terracotta-clay",
+            Self::ChampagneMetal => "champagne-metal",
+            Self::GraphiteGold => "graphite-gold",
             ThemeChoice::Light => "light",
             ThemeChoice::Dark => "dark",
             ThemeChoice::Dracula => "dracula",
@@ -118,7 +122,13 @@ impl ThemeChoice {
 
     pub fn label(self) -> &'static str {
         match self {
-            ThemeChoice::System => "System",
+            ThemeChoice::System => "Match operating system",
+            Self::LagoonEnamel => "01 · Lagoon enamel",
+            Self::CobaltSatin => "02 · Cobalt satin",
+            Self::AuroraGlass => "03 · Aurora glass",
+            Self::TerracottaClay => "04 · Terracotta clay",
+            Self::ChampagneMetal => "05 · Champagne metal",
+            Self::GraphiteGold => "06 · Graphite gold",
             ThemeChoice::Light => "Light",
             ThemeChoice::Dark => "Dark",
             ThemeChoice::Dracula => "Dracula",
@@ -181,7 +191,7 @@ fn default_languages() -> Vec<String> {
 }
 
 fn default_theme() -> String {
-    "system".to_string()
+    "aurora-glass".to_string()
 }
 
 fn default_theme_light() -> String {
@@ -230,7 +240,7 @@ impl Config {
     }
 
     pub fn theme_parsed(&self) -> ThemeChoice {
-        parse_theme(&self.theme).unwrap_or(ThemeChoice::System)
+        parse_theme(&self.theme).unwrap_or(ThemeChoice::AuroraGlass)
     }
 
     /// Palette for a light desktop while following the system; `system`
@@ -251,7 +261,7 @@ impl Config {
 
 fn parse_theme(value: &str) -> Option<ThemeChoice> {
     let value = value.to_ascii_lowercase();
-    ThemeChoice::ALL.into_iter().find(|c| c.as_str() == value)
+    ThemeChoice::ALL.into_iter().chain(ThemeChoice::PALETTES).find(|c| c.as_str() == value)
 }
 
 impl Default for Config {
@@ -348,11 +358,10 @@ languages = ["French"]
 # activation_key = "Both"
 
 # Appearance of the picker and the settings window:
-#   system, light, dark, dracula,
-#   catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha,
-#   rose-pine, rose-pine-moon, rose-pine-dawn
-# Default: "system"
-# theme = "system"
+#   lagoon-enamel, cobalt-satin, aurora-glass, terracotta-clay,
+#   champagne-metal, graphite-gold, system
+# Default: "aurora-glass"
+# theme = "aurora-glass"
 # With theme = "system", which palettes to use on a light / dark desktop
 # (any value above except "system"):
 # theme_light = "light"
@@ -401,16 +410,6 @@ pub fn set_theme(theme: ThemeChoice) -> std::io::Result<()> {
     set_value("theme", &format!("{:?}", theme.as_str()))
 }
 
-/// Persist the palette used on a light desktop while following the system.
-pub fn set_theme_light(theme: ThemeChoice) -> std::io::Result<()> {
-    set_value("theme_light", &format!("{:?}", theme.as_str()))
-}
-
-/// Persist the palette used on a dark desktop while following the system.
-pub fn set_theme_dark(theme: ThemeChoice) -> std::io::Result<()> {
-    set_value("theme_dark", &format!("{:?}", theme.as_str()))
-}
-
 pub fn set_activation_key(key: ActivationKey) -> std::io::Result<()> {
     set_value("activation_key", &format!("{:?}", key.as_str()))
 }
@@ -436,7 +435,9 @@ fn set_value(key: &str, rendered_value: &str) -> std::io::Result<()> {
             std::fs::read_to_string(&path).unwrap_or_default()
         }
     };
-    std::fs::write(&path, replace_assignment(&current, key, rendered_value))
+    let temporary = path.with_extension("toml.tmp");
+    std::fs::write(&temporary, replace_assignment(&current, key, rendered_value))?;
+    std::fs::rename(temporary, path)
 }
 
 /// Replace the `key = ...` assignment (a single-line value or a multi-line
@@ -612,7 +613,7 @@ mod tests {
             parse_config_str(&again).unwrap().theme_parsed(),
             ThemeChoice::Light
         );
-        assert_eq!(Config::default().theme_parsed(), ThemeChoice::System);
+        assert_eq!(Config::default().theme_parsed(), ThemeChoice::AuroraGlass);
         // System-mode palettes: defaults, named values, and "system" itself
         // is not allowed there.
         let d = Config::default();
@@ -628,12 +629,12 @@ mod tests {
         assert_eq!(c.theme_light_parsed(), ThemeChoice::Light);
         assert_eq!(c.theme_dark_parsed(), ThemeChoice::Dark);
         assert!(!ThemeChoice::PALETTES.contains(&ThemeChoice::System));
-        assert_eq!(ThemeChoice::PALETTES.len() + 1, ThemeChoice::ALL.len());
+        assert_eq!(ThemeChoice::ALL.len(), 7);
         assert_eq!(
             parse_config_str("theme = \"weird\"\n")
                 .unwrap()
                 .theme_parsed(),
-            ThemeChoice::System
+            ThemeChoice::AuroraGlass
         );
         for choice in ThemeChoice::ALL {
             assert_eq!(

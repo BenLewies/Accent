@@ -3,7 +3,10 @@
 ## 1.4.0 — unreleased Accent debut
 
 - Linux long-press activation alongside Space/arrows.
-- Automatic Omarchy palette matching and theme-aware Á bar controls.
+- Six coordinated button themes and a live operating-system colour option.
+- Aurora glass as the default, with a visual picker in Appearance settings.
+- Matching Á bar artwork, character selector and settings colours with saved preferences.
+- Fresh theme-picker and character-selector screenshots in the README.
 - Settings pages for Typing, searchable Languages, Appearance and About.
 - Quiet service startup and explicit settings launch; preserved user preferences.
 - Root marketplace manifest, preview, support docs and complete distribution notices.

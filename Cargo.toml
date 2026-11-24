@@ -12,7 +12,7 @@ name = "accent"
 path = "src/main.rs"
 
 [dependencies]
-iced = { version = "0.13", features = ["tokio", "advanced"] }
+iced = { version = "0.13", features = ["tokio", "advanced", "image-without-codecs"] }
 tokio = { version = "1", features = ["sync", "rt", "net", "time"] }
 log = "0.4"
 env_logger = "0.11"
