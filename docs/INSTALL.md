@@ -2,12 +2,12 @@
 
 ## Supported complete installation
 
-Accent 1.4.1 supports Omarchy Quattro on Linux x86_64, from an active local Hyprland
+Accent 1.4.2 supports Omarchy Quattro on Linux x86_64, from an active local Hyprland
 session with a working user service manager and Omarchy shell. Run the installer as
 your normal desktop user, never with `sudo`:
 
 ```sh
-git clone --branch v1.4.1 --depth 1 https://github.com/BenLewies/Accent.git
+git clone --branch v1.4.2 --depth 1 https://github.com/BenLewies/Accent.git
 cd Accent
 ./install.sh
 ```

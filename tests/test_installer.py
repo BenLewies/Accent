@@ -77,7 +77,7 @@ class ReleaseTests(unittest.TestCase):
     def test_mismatched_commit_is_rejected_before_install(self):
         package = self.root / 'package'
         package.mkdir()
-        (package / 'BUILD.json').write_text(json.dumps({'version': '1.4.1', 'commit': 'other'}))
+        (package / 'BUILD.json').write_text(json.dumps({'version': '1.4.2', 'commit': 'other'}))
         def download(_url, destination, _limit):
             destination.write_text('placeholder')
         with patch.object(installer, 'download', side_effect=download), \
@@ -85,7 +85,7 @@ class ReleaseTests(unittest.TestCase):
              patch.object(installer, 'extract_package', return_value=package), \
              patch.object(installer, 'capture', return_value='expected'):
             with self.assertRaisesRegex(RuntimeError, 'does not match'):
-                installer.release_package(ROOT, self.root, '1.4.1')
+                installer.release_package(ROOT, self.root, '1.4.2')
 
 
 class InstallationTests(unittest.TestCase):

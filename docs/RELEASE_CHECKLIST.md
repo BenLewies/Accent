@@ -76,7 +76,7 @@ References (reviewed 2026-10-28):
   category, tags and checklist text still match. No issue, tag or release created.
 
 
-## Complete installer (1.4.1 and later)
+## Complete installer (1.4.2 and later)
 
 - Run `python3 -m unittest discover -s tests` and the shell syntax checks from CI.
 - Verify the Linux archive contains `BUILD.json` with the version and exact source commit.

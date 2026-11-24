@@ -45,7 +45,7 @@ Supported target: **Omarchy Quattro, Linux x86_64, in an active local desktop
 session**. Clone the release, review the source, then run its installer:
 
 ```bash
-git clone --branch v1.4.1 --depth 1 https://github.com/BenLewies/Accent.git
+git clone --branch v1.4.2 --depth 1 https://github.com/BenLewies/Accent.git
 cd Accent
 ./install.sh
 ```

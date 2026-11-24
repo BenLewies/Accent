@@ -15,6 +15,32 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 
+def source_license_headers(root):
+    """Some crates ship the full BSD notice in source headers, not LICENSE files."""
+    found = []
+    seen = set()
+    for path in sorted(root.rglob('*.rs')):
+        if len(path.relative_to(root).parts) > 4 or path.stat().st_size > 1_000_000:
+            continue
+        try:
+            lines = path.read_text().splitlines(keepends=True)
+        except UnicodeDecodeError:
+            continue
+        header = []
+        for line in lines:
+            if (line.startswith('//') and not line.startswith('//!')) or not line.strip():
+                header.append(line)
+            else:
+                break
+        notice = ''.join(header).strip()
+        # A copyright alone is not a licence. Require the complete grant and disclaimer.
+        if (all(part in notice for part in ('Copyright', 'Redistribution and use',
+                'THIS SOFTWARE IS PROVIDED', 'SUCH DAMAGE.')) and notice not in seen):
+            seen.add(notice)
+            found.append((str(path.relative_to(root)) + ' (original licence header)', notice))
+    return found
+
+
 def package_notices(package):
     root = Path(package['manifest_path']).parent
     paths = sorted(f for f in root.rglob('*') if f.is_file()
@@ -26,6 +52,8 @@ def package_notices(package):
             found.append((str(path.relative_to(root)), path.read_text()))
         except UnicodeDecodeError:
             continue
+    if not found:
+        found.extend(source_license_headers(root))
     if not found:
         info_path = root / '.cargo_vcs_info.json'
         info = json.loads(info_path.read_text()) if info_path.exists() else {}

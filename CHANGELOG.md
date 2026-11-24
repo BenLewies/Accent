@@ -1,7 +1,8 @@
 # Changelog
 
-## 1.4.1
+## 1.4.2
 
+- Complete image-dependency notices, including original BSD source-header attribution.
 - Complete Omarchy installer for the runtime, dependencies, active-session device
   access, launcher, automatic startup and bar plugin.
 - Version/source-matched release packages with strict checksums and build provenance
