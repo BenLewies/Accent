@@ -103,7 +103,7 @@ class InstallationTests(unittest.TestCase):
         self.stage = self.home / '.config/omarchy/plugins/.accent-install-test'
         self.stage.mkdir(parents=True)
         (self.stage / 'manifest.json').write_text(json.dumps({'id': 'bjl.accent', 'version': installer.version_at(ROOT)}))
-        self.state = {'active': False, 'enabled': False, 'plugin_enabled': False, 'fail_enable': False}
+        self.state = {'active': False, 'enabled': False, 'plugin_enabled': False, 'fail_enable': False, 'interrupt_enable': False}
         self.commands = []
         self.config = self.home / '.config/accent/config.toml'
         self.config.parent.mkdir(parents=True)
@@ -134,6 +134,8 @@ class InstallationTests(unittest.TestCase):
         elif args[:4] == ['omarchy', 'plugin', 'list', '--json']:
             output = json.dumps([{'id': 'bjl.accent', 'enabled': self.state['plugin_enabled']}])
         elif args[:3] == ['omarchy', 'plugin', 'enable']:
+            if self.state['interrupt_enable']:
+                raise KeyboardInterrupt()
             if self.state['fail_enable']:
                 result = 1
             else:
@@ -206,6 +208,15 @@ class InstallationTests(unittest.TestCase):
         self.assertFalse(self.state['active'])
         self.assertFalse(self.state['enabled'])
         self.assertFalse(self.state['plugin_enabled'])
+        self.assertEqual(self.config.read_text(), self.preferences)
+
+    def test_cancelled_install_rolls_back_partial_user_files(self):
+        self.state['interrupt_enable'] = True
+        with self.assertRaises(KeyboardInterrupt):
+            self.install()
+        self.assertFalse((self.home / '.local/bin/accent').exists())
+        self.assertFalse(self.target.exists())
+        self.assertFalse(self.state['active'])
         self.assertEqual(self.config.read_text(), self.preferences)
 
     def test_symlink_targets_are_never_overwritten(self):

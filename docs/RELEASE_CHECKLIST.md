@@ -74,3 +74,16 @@ References (reviewed 2026-10-28):
   Rust tests and fresh desktop/manual installation were not rerun for this preparation.
 - Current marketplace submission contract re-read; the existing six headings,
   category, tags and checklist text still match. No issue, tag or release created.
+
+
+## Complete installer (1.4.1 and later)
+
+- Run `python3 -m unittest discover -s tests` and the shell syntax checks from CI.
+- Verify the Linux archive contains `BUILD.json` with the version and exact source commit.
+- Check out the tag and run `./install.sh` in an active local Omarchy session.
+- Confirm `./install.sh --check` reports all checks ready, including matching versions.
+- Exercise repair, upgrade, declined permission setup, bad checksums and failure rollback.
+- Confirm existing preferences and bar placement survive an upgrade.
+- Keep the marketplace manual-install override until its maintainers approve a
+  genuinely supported standard plugin-add path; the complete installer does not
+  change Omarchy's no-install-hooks contract.

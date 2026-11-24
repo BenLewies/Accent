@@ -33,7 +33,7 @@ def run(*args, check=True, timeout=60, **kwargs):
 
 
 def capture(*args, check=True):
-    return run(*args, check=check, capture_output=True).stdout.strip()
+    return run(*args, check=check, timeout=10, capture_output=True).stdout.strip()
 
 
 def version_at(root):
@@ -43,6 +43,8 @@ def version_at(root):
 def download(url, destination, limit):
     # All install URLs are constructed locally from a fixed HTTPS repository.
     with urlopen(url, timeout=30) as response, destination.open('wb') as output:
+        if not response.geturl().startswith('https://'):
+            raise RuntimeError('Release download redirected away from HTTPS')
         count = 0
         while chunk := response.read(64 * 1024):
             count += len(chunk)
@@ -61,7 +63,7 @@ def verify_checksum(archive, sums):
         raise RuntimeError('Release must contain exactly one checksum for ' + ASSET)
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     if digest != matches[0]:
-        raise RuntimeError('Release checksum mismatch; nothing has been installed')
+        raise RuntimeError('Release checksum mismatch; the downloaded program was not installed')
 
 
 def extract_package(archive, destination):
@@ -221,7 +223,9 @@ class FileChanges:
             if saved is None:
                 target.unlink(missing_ok=True)
             else:
-                shutil.copy2(saved, target)
+                restored = target.with_name('.' + target.name + '.accent-restore')
+                shutil.copy2(saved, restored)
+                os.replace(restored, target)
 
 
 def install_runtime(root, package, home, changes):
@@ -268,7 +272,7 @@ def prepare_plugin(root, home):
         run('git', 'clone', '--quiet', '--no-hardlinks', '--', root, stage)
         run('git', '-C', stage, 'remote', 'set-url', 'origin', REPOSITORY + '.git')
         run('omarchy-plugin-validate', stage)
-    except Exception:
+    except BaseException:
         shutil.rmtree(stage)
         raise
     return target, stage
@@ -280,7 +284,7 @@ def health(home):
               'keyboard_access': input_access(),
               'service': capture('systemctl', '--user', 'is-active', 'accent.service', check=False) == 'active',
               'autostart': capture('systemctl', '--user', 'is-enabled', 'accent.service', check=False) == 'enabled',
-              'daemon_responding': run('busctl', '--user', 'call', 'io.github.BenLewies.Accent',
+              'daemon_responding': run('busctl', '--user', '--timeout=2', 'call', 'io.github.BenLewies.Accent',
                   '/io/github/BenLewies/Accent', 'org.freedesktop.DBus.Peer', 'Ping',
                   check=False, capture_output=True).returncode == 0}
     try:
@@ -348,7 +352,7 @@ def install(root, home, from_source):
                 time.sleep(.2)
             else:
                 raise RuntimeError('Readiness checks failed: ' + ', '.join(k for k, v in checks.items() if not v))
-        except Exception:
+        except BaseException:
             run('systemctl', '--user', 'stop', 'accent.service', check=False)
             changes.rollback()
             if stage and target.exists() and not stage.exists():
@@ -400,6 +404,9 @@ def main():
 if __name__ == '__main__':
     try:
         sys.exit(main())
-    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, EOFError) as error:
+    except KeyboardInterrupt:
+        print('Installation cancelled.', file=sys.stderr)
+        sys.exit(130)
+    except (OSError, RuntimeError, ValueError, tarfile.TarError, subprocess.SubprocessError, EOFError) as error:
         print('Accent installation failed: ' + str(error), file=sys.stderr)
         sys.exit(1)

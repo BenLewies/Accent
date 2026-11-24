@@ -64,6 +64,7 @@ jobs:
           python3 scripts/check_distribution.py
           python3 -m unittest discover -s tests
           node tests/test_bar_theme.cjs
+          bash -n install.sh dist/linux/install.sh dist/linux/setup-input.sh
 
       - name: Test
         run: cargo test --all-targets --locked
