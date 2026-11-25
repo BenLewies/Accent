@@ -2,5 +2,7 @@
   "version": "1.5.0",
   "target": "x86_64-unknown-linux-gnu",
   "source_sha256": "56c9977af07fde724ff2fa2d4d392e57cf2cb5d57f3edbe740352204a8af5e7d",
-  "binary_sha256": "439b2d7aab414337c1f10d387950bde108fcaf6b6802aa023e38cdb77557c9e8"
+  "binary_sha256": "8de0689642520690865cf02068100b52c5d3ffbc854676130d970a3e2135a689",
+  "build_run": "https://github.com/BenLewies/Accent/actions/runs/45534446182",
+  "source_commit": "a98a807b189be8def6a7f3bc3b22867e77509e36"
 }
