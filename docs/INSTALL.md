@@ -1,131 +1,135 @@
 # Installation and troubleshooting
 
-## Supported complete installation
+## Standard Omarchy installation
 
-Accent 1.4.2 supports Omarchy Quattro on Linux x86_64, from an active local Hyprland
-session with a working user service manager and Omarchy shell. Run the installer as
-your normal desktop user, never with `sudo`:
+Accent 1.5.0 supports Omarchy Quattro on Linux x86_64 with Hyprland’s
+`zwp_input_method_manager_v2` and `zwp_virtual_keyboard_manager_v1` interfaces.
+The integration has been tested on Hyprland 0.56.2.
 
-```sh
-git clone --branch v1.4.2 --depth 1 https://github.com/BenLewies/Accent.git
-cd Accent
-./install.sh
-```
-
-Review the checkout before running it. The summary prompt lists the changes. On a
-fresh machine the installer uses `omarchy pkg add` for missing packages and requests
-administrator authentication for device access. It never fetches and executes an
-installer script. Network downloads are limited to the versioned GitHub release;
-the archive checksum, package completeness, build commit and program version must
-match before user files are replaced. If an authenticated `gh` client is available,
-build-provenance verification must also succeed. A failed release download or check
-fails visibly; it does not silently switch to a source build or bypass verification.
-
-The installer writes the program to `~/.local/bin/accent`, installs its user service,
-launcher, icons and licence notices, and installs/enables `bjl.accent` in Omarchy.
-The plugin checkout's remote points to GitHub, not to a temporary or local clone.
-Existing local Git changes block replacement. A legacy non-Git Accent plugin is
-backed up before replacement. Settings in `~/.config/accent/config.toml` are preserved.
-
-Before reporting success it checks keyboard/uinput access, the enabled user service,
-a responding D-Bus daemon with an initialized virtual keyboard, the enabled bar plugin and matching runtime/plugin versions.
-The service uses the software renderer by default to avoid GPU-specific startup errors.
-No settings window opens during background service startup.
-
-### Keyboard access
-
-Accent reads keyboard devices to recognize held letters and types chosen characters
-through a virtual keyboard. The device setup installs these owned system files:
-
-- `/etc/udev/rules.d/60-accent.rules`
-- `/etc/modules-load.d/accent.conf`
-
-The rules use logind's `uaccess` tag for keyboard event devices and `/dev/uinput`.
-They grant access to the active local session, including hotplugged keyboards,
-without world-writable devices or new `input` group membership. The helper loads
-uinput and reapplies the rules immediately; no reboot is normally required. Older
-input-group membership and unrelated device rules are left alone. Replaced Accent
-rule/module files have dated backups alongside them.
-
-Inactive or remote-only sessions cannot satisfy these readiness checks. If access
-is still unavailable after setup, installation fails with a clear message rather
-than claiming that typing is ready. Log in locally and rerun the installer.
-
-### Source builds
-
-From a reviewed checkout, run:
+Review the public repository, then run:
 
 ```sh
-./install.sh --from-source
+omarchy plugin add https://github.com/BenLewies/Accent --enable
 ```
 
-The installer adds the Rust toolchain and native build dependencies using Omarchy's
-package manager, builds with `Cargo.lock`, bundles dependency notices, and then uses
-the same permissions, installation and readiness checks as the prebuilt path. An
-initial build requires internet access. Notice text may be fetched from each crate's
-recorded GitHub commit; downloaded notice content is never executed.
+This clones the complete plugin, including `dist/omarchy/runtime/linux-x86_64/accent`,
+its build record and dependency notices. The shell owns the process. Nothing is
+built or downloaded on enablement. No device access, input-group membership,
+administrator authentication, package installation or reboot is needed.
+The executable uses libraries already present on the supported Omarchy desktop.
+Only the normal per-user Accent preferences are created.
 
-When installing the plugin into another directory, the source checkout must be
-committed so the cloned bar plugin matches the program being built. Installing from
-an existing plugin checkout is also supported. The older
-`INSTALL_FROM_SOURCE=1 ./dist/linux/install.sh` entry point remains an alias.
+The standard command follows current upstream HEAD. It does not pin a marketplace
+reviewed commit. Review the installed source before enabling code you do not trust.
+A marketplace listing or baseline is not a security audit.
 
-## Updates and repairs
+Click Á to configure languages, triggers and appearance. New installations use
+Aurora glass. Right-click for pause/start, restart and startup preferences.
+Automatic startup means “start when this enabled bar plugin loads.” Turning it
+off keeps the current session running until paused or the plugin unloads.
 
-Check out the desired release tag in your original clone and run `./install.sh`
-again. This keeps the native program and plugin on the same release. A normal
-`omarchy plugin update` updates only the bar checkout, so it is not a complete
-runtime upgrade. Re-running the same release repairs an incomplete installation.
+## Updates and removal
 
-The installer records source/version metadata in `~/.local/share/accent/BUILD.json`.
-Replaced user files and any replaced plugin checkout are retained under
-`~/.local/state/accent/install-backups/`. Each backup has a `files.json` mapping the
-numbered backups to their original paths.
+```sh
+omarchy plugin update bjl.accent
+omarchy plugin disable bjl.accent
+omarchy plugin enable bjl.accent
+omarchy plugin remove bjl.accent
+```
 
-If an installation step fails after replacement, the installer restores previous
-user files, plugin files and service startup state. System packages and device
-rules remain installed; rule backups remain beside their managed files in `/etc`.
-A cancelled administrator prompt never counts as successful setup.
+Updates carry the matching native program. Disabling/removing unloads the owned
+process and releases its compositor keyboard grab. Preferences survive in
+`~/.config/accent/`, respecting `XDG_CONFIG_HOME` on Linux.
+`./install.sh` is a compatibility wrapper for these ordinary plugin commands;
+`./install.sh --check` reports runtime readiness without changing anything.
+
+## Migration from 1.4.x
+
+A normal plugin update is sufficient. On first enablement, the controller detects
+the former `accent.service` only if its executable is `~/.local/bin/accent`, reads
+its automatic-startup preference, and disables/stops that user service. The
+plugin then starts its bundled program. No administrator access is used. An
+unrelated service with the same name is left alone. Typing, theme and bar placement
+preferences are retained. This migration is recorded in `accent/bar.json`.
+
+## Compatibility
+
+Hyprland permits one input method per seat. Accent cannot share this interface
+with an active Fcitx, IBus or another input-method daemon. It reports that conflict
+and releases its connection; it does not replace or stop the other tool. Pause the
+other tool only if you intend to switch to Accent. The default Omarchy target has
+no other active input method.
+
+The native Wayland backend preserves the existing deferred-letter state machine:
+quick typing, rollover, Space/arrows, long press, uppercase latching, navigation,
+grid selection and cancellation. A separate same-client virtual keyboard types
+Unicode directly, including combining sequences and supplementary-plane scripts.
+It does not consume clipboard content or install custom desktop XKB options.
+Compositor shortcuts remain owned by Hyprland. Applications that identify a field
+as password, PIN, hidden text or sensitive input bypass accent selection.
+
+macOS and other Linux desktops retain their existing backends and are outside
+this standard Omarchy installation target. `accent --evdev` explicitly selects the
+legacy Linux device backend and still requires separately configured device access.
+The old `dist/linux/install.py` and `setup-input.sh` remain legacy maintenance tools;
+they are not invoked by the plugin or the supported installation command.
 
 ## Troubleshooting
 
+- **No icon:** check `omarchy plugin list --json`; enable `bjl.accent` and choose a bar position.
+- **Dim icon:** open the controls for the reported error, then restart Accent.
+- **Another input method:** see the compatibility note above; no extra permissions will fix this conflict.
+- **Missing bundled program:** update/reinstall the complete root repository, not only `dist/omarchy`.
+- **Unsupported architecture:** the included runtime currently targets Linux x86_64.
+- **Unexpected stopped process:** use Restart Accent; repeated failures stop automatic retries.
+- **Protocol availability:** run `dist/omarchy/runtime/linux-x86_64/accent --wayland-probe`
+  from the plugin root. It checks protocol globals without taking keyboard control.
+
+Readiness can also be queried locally:
+
 ```sh
-./install.sh --check
-systemctl --user status accent
-journalctl --user -u accent -n 50
+python3 dist/omarchy/control.py status
 ```
 
-`--check` reports JSON with a `ready` value and individual checks. It makes no changes
-and returns a nonzero exit code if any check fails.
+It distinguishes a responding process from a working input backend and includes a
+specific conflict/error message. Runtime messages go to the shell’s process logs;
+Accent does not log typed text. Report a minimal reproduction with application,
+keyboard layout, trigger mode and Accent/Hyprland versions, without private input.
 
-- Run inside your active local Omarchy session, with at least one keyboard connected.
-- If the bar or runtime version differs, rerun the complete release installer.
-- If a plugin checkout has local changes, commit/stash them before upgrading.
-- If a checksum, source-commit or provenance check fails, do not bypass it. Use an
-  unmodified checkout of the matching release tag, or explicitly build reviewed source.
-- If a rare symbol fails, reduce enabled sets. Characters beyond the spare-key
-  capacity use clipboard paste, which may not work in terminals.
-- Stop keyboard interception immediately with `systemctl --user stop accent`.
+## Building the bundled runtime
 
-## Removal
+Developers need Rust, a C toolchain and the development libraries listed in CI.
+Build from reviewed source; no build is needed by end users:
 
-Stop the service, remove the bar plugin with `omarchy plugin remove bjl.accent`,
-remove `~/.local/bin/accent`, `~/.local/share/applications/accent.desktop` and
-`~/.config/systemd/user/accent.service`, then run `systemctl --user daemon-reload`.
+```sh
+cargo test --all-targets --locked
+cargo build --release --locked
+python3 scripts/bundle_notices.py --target x86_64-unknown-linux-gnu --output RUST_DEPENDENCY_LICENSES.txt
+strip target/release/accent
+python3 scripts/bundle_runtime.py --binary target/release/accent --notices RUST_DEPENDENCY_LICENSES.txt
+python3 scripts/bundle_runtime.py --check
+```
 
-Optional user leftovers are the service override directory, icons named `accent`
-beneath `~/.local/share/icons/hicolor`, notices beneath
-`~/.local/share/licenses/accent`, the build record under `~/.local/share/accent`,
-installation backups under `~/.local/state/accent`, and settings under
-`~/.config/accent`. Keep settings if you may reinstall.
+`BUILD.json` records version, target, binary SHA-256 and a deterministic digest of
+Cargo inputs, Rust sources, assets and vendored source. CI rejects a stale bundle.
+The source digest/checksum documents correspondence; it is not a claim of a
+bit-for-bit reproducible or independently attested build. Preserve executable mode
+and all licence notices when updating the committed runtime.
 
-If Accent is no longer needed, an administrator can remove its two owned system
-files listed under Keyboard access and reload udev rules. Reapply the affected
-input/misc devices or log out after removing the rule. Do not remove shared uinput
-configuration, shared input-group membership, or another application's rules.
-An older installer may also have created `/etc/modules-load.d/uinput.conf`; do not
-remove that shared file without checking whether another application uses it.
+## Legacy cleanup
 
-Accent's generated XKB files are under `~/.config/xkb`; remove only Accent-owned
-files if no longer needed. The runtime keyboard option disappears when desktop
-settings are reloaded. Other applications' rules and settings must remain intact.
+The old program, launcher and disabled service may remain after migration. After
+confirming the new plugin works, they can be removed:
+
+```sh
+rm -f ~/.local/bin/accent ~/.local/share/applications/accent.desktop
+rm -f ~/.config/systemd/user/accent.service
+systemctl --user daemon-reload
+```
+
+Old icons/notices under `~/.local/share` and backups under
+`~/.local/state/accent/install-backups/` are optional retained files. Previous
+administrator-owned `/etc/udev/rules.d/60-accent.rules` and
+`/etc/modules-load.d/accent.conf` are no longer needed by this backend. Remove them
+only after checking other tools do not rely on them. Do not remove shared input-group
+membership or other tools’ rules. The new plugin never requires those permissions.

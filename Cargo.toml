@@ -1,6 +1,6 @@
 [package]
 name = "accent"
-version = "1.4.2"
+version = "1.5.0"
 edition = "2021"
 description = "Accents and symbols without breaking your flow — a character picker with Omarchy bar controls"
 license = "MIT"
@@ -43,6 +43,9 @@ xkbcommon = "0.9"
 # RandR view of the XWayland layout, to place the overlay on the right
 # monitor (winit already pulls x11rb in).
 x11rb = { version = "0.13", features = ["randr"] }
+wayland-client = "0.31.14"
+wayland-protocols-misc = { version = "0.3.12", features = ["client"] }
+libc = "0.2"
 
 # Vendored rdev 0.5.3 with a patched Linux grab: hot-plugged keyboards (USB
 # replug, Bluetooth reconnect) are grabbed+cloned like startup devices, uinput

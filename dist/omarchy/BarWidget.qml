@@ -10,14 +10,18 @@ BarWidget {
     id: root
     moduleName: "bjl.accent"
     property string serviceState: "unknown"
-    property bool autostart: false
+    property bool autostart: true
+    property bool wantRunning: false
+    property bool pendingSettings: false
+    property bool initialized: false
+    property int launchAttempts: 0
     property string error: ""
     property bool menuOpen: false
     property string response: ""
     property string themeId: "aurora-glass"
     readonly property bool systemTheme: themeId === "system"
     FileView {
-        path: Quickshell.env("HOME") + "/.config/accent/config.toml"
+        path: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/accent/config.toml"
         watchChanges: true
         printErrors: false
         onLoaded: root.themeId = AccentTheme.fromConfig(text())
@@ -30,7 +34,7 @@ BarWidget {
     function request(action) {
         if (control.running) return
         response = ""
-        control.command = ["python3", "-B", Qt.resolvedUrl("control.py").toString().replace("file://", ""), action]
+        control.command = ["python3", "-B", decodeURIComponent(Qt.resolvedUrl("control.py").toString().replace("file://", "")), action]
         control.running = true
     }
     IpcHandler {
@@ -38,6 +42,15 @@ BarWidget {
         function status(): string { return JSON.stringify({state: root.serviceState, autostart: root.autostart, theme: root.themeId, error: root.error}) }
         function settings(): void { root.request("settings") }
         function menu(): void { root.menuOpen = !root.menuOpen }
+    }
+    Component.onCompleted: root.request("initialize")
+    Process {
+        id: runtime
+        command: [decodeURIComponent(Qt.resolvedUrl("runtime/linux-x86_64/accent").toString().replace("file://", "")), "--daemon"]
+        environment: ({ ICED_BACKEND: "tiny-skia" })
+        onExited: function(code) {
+            if (code !== 0) root.error = "Accent stopped unexpectedly; open controls to retry."
+        }
     }
     Process {
         id: control
@@ -48,15 +61,40 @@ BarWidget {
                 root.error = result.error || ""
                 if (result.state !== undefined) root.serviceState = result.state
                 if (result.autostart !== undefined) root.autostart = result.autostart
+                if (result.open_settings) root.pendingSettings = true
+                if (result.should_run !== undefined) {
+                    root.launchAttempts = 0
+                    root.wantRunning = result.should_run
+                    root.initialized = true
+                    if (!root.wantRunning) runtime.running = false
+                    else if (!runtime.running && result.state !== "active") { root.launchAttempts++; runtime.running = true }
+                }
+                if (result.state === "active") root.launchAttempts = 0
+                if (root.wantRunning && !runtime.running && result.state === "inactive" && !result.error && root.launchAttempts < 3) {
+                    root.launchAttempts++
+                    runtime.running = true
+                }
+                if (root.pendingSettings && result.state === "active") {
+                    root.pendingSettings = false
+                    settingsDelay.start()
+                }
             } catch (e) { root.error = "Could not read Accent service status" }
         }
     }
     Timer {
-        interval: 5000
+        id: settingsDelay
+        interval: 50
+        onTriggered: root.request("settings")
+    }
+    Timer {
+        interval: 2000
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.request("status")
+        onTriggered: {
+            if (!root.initialized) root.request("initialize")
+            else root.request("status")
+        }
     }
     WidgetButton {
         id: button

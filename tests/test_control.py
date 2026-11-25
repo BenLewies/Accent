@@ -16,15 +16,15 @@ class ServiceControlTests(unittest.TestCase):
     def test_pause_has_fixed_unprivileged_arguments(self):
         with patch.object(control.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, 'active\n', '')) as run:
             control.main('stop')
-            self.assertEqual(run.call_args_list[0].args[0], ['systemctl', '--user', 'stop', 'accent.service'])
+            self.assertEqual(run.call_args_list[0].args[0], ['busctl', '--user', '--timeout=2', 'call', control.NAME, control.OBJECT, control.NAME, 'Quit'])
             self.assertNotIn('shell', run.call_args_list[0].kwargs)
 
     def test_failed_service_action_is_reported(self):
         with patch.object(control.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, ['systemctl'])):
             with self.assertRaises(subprocess.CalledProcessError): control.main('restart')
 
-    def test_missing_service_is_distinct_from_paused(self):
-        with patch.object(control, 'systemctl', side_effect=[subprocess.CompletedProcess([], 0, 'not-found\n'), subprocess.CompletedProcess([], 1, '')]):
-            self.assertEqual(control.status(), {'state': 'missing', 'autostart': False})
+    def test_missing_daemon_is_inactive_without_a_service_dependency(self):
+        with patch.object(control, 'call', return_value=subprocess.CompletedProcess([], 1, '')), patch.object(control, 'preferences', return_value={'autostart': True}):
+            self.assertEqual(control.status(), {'state': 'inactive', 'autostart': True, 'error': ''})
 
 if __name__ == '__main__': unittest.main()

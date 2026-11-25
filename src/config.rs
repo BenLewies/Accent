@@ -284,6 +284,10 @@ impl Default for Config {
 }
 
 pub fn config_path() -> PathBuf {
+    #[cfg(target_os = "linux")]
+    if let Some(path) = dirs::config_dir() {
+        return path.join("accent").join("config.toml");
+    }
     if let Some(home) = dirs::home_dir() {
         home.join(".config").join("accent").join("config.toml")
     } else {

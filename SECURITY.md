@@ -1,10 +1,13 @@
 # Security and privacy
 
-Accent intercepts keyboard input locally and can inject characters. The daemon needs
-input-device permissions; the bar widget runs within Omarchy's unsandboxed shell and
-controls only `accent.service` through the user service manager. Its operations are
-fixed allowlisted arguments, not arbitrary shell strings. No telemetry or typed-text
-logging is implemented. Clipboard fallback can change clipboard contents.
+Accent processes keyboard input locally and can inject characters. On supported
+Omarchy installations it uses compositor input-method/virtual-keyboard protocols,
+without physical device access or administrator privileges. The bar runs inside
+Omarchy’s unsandboxed shell and starts its bundled native program. No executable
+is downloaded or built on enablement. No telemetry or typed-text logging is
+implemented, and this backend does not use the clipboard. Another active input
+method is left in place; Accent reports the conflict rather than replacing it.
+The inherited explicit `--evdev` backend still requires device permissions.
 
 Only the current Accent source is maintained here; inherited QuickAccent tags are not
 Accent releases. Marketplace listing and static checks are not security certification.
@@ -14,8 +17,9 @@ repository exposes it. Otherwise open an issue containing only a request for a p
 reporting channel, not exploit details or sensitive input. Never attach tokens, typed
 passwords, full memory dumps, or private clipboard contents.
 
-Review installation scripts before running them. Privilege is requested during manual
-installation for device rules and group membership, never from a plugin click.
+Review source and bundled executables before enabling a plugin. The retained legacy
+device-setup helper is a maintenance tool, is not part of standard installation,
+and is never invoked by the widget.
 
 ## Inherited lru advisory
 

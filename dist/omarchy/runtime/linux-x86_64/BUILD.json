@@ -1,0 +1,6 @@
+{
+  "version": "1.5.0",
+  "target": "x86_64-unknown-linux-gnu",
+  "source_sha256": "1a99997e5c049d72946d6b5865aa40aad1cfe1e99803ba460958d8593e159afc",
+  "binary_sha256": "da538da2d828b3794b8e58d6016c6a8ff8de3fe2cba503985edad19491bcfd56"
+}

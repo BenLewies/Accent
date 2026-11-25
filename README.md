@@ -36,45 +36,32 @@ settings window share the choice; changes apply immediately and save automatical
 - **Your languages, your picker.** Search language and symbol sets; keep only what you use.
 - **Seven appearance choices.** Six button designs plus **Match operating system**; one choice for the bar icon, character picker and settings.
 - **Stay in control.** Click **Á** for settings; right-click to pause, restart, or change startup.
-- **Quiet by default.** The service starts in the background. Settings open only on request.
+- **Quiet by default.** Accent starts in the background. Settings open only on request.
 - **Local processing.** No account, analytics, or keystroke logging in Accent.
 
 ## Install on Omarchy
 
-Supported target: **Omarchy Quattro, Linux x86_64, in an active local desktop
-session**. Clone the release, review the source, then run its installer:
+Supported target: **Omarchy Quattro, Linux x86_64, with Hyprland**.
+Review the repository, then use Omarchy’s standard installation:
 
 ```bash
-git clone --branch v1.4.2 --depth 1 https://github.com/BenLewies/Accent.git
-cd Accent
-./install.sh
+omarchy plugin add https://github.com/BenLewies/Accent --enable
 ```
 
-This is the complete installation path. One installer handles:
+The repository includes the matching native runtime and its dependency notices.
+Enabling the plugin starts it locally; disabling or removing the plugin releases
+keyboard control. **No separate installer, Rust build, administrator prompt, input
+group, device rules or reboot is required.** Enabling never downloads executable code.
 
-- Required runtime packages through Omarchy’s package manager.
-- The matching prebuilt program, checked against the release checksum and source commit.
-- Keyboard and virtual-keyboard access for the active local session, with an administrator prompt when needed.
-- The user service, automatic startup, launcher, icons and licence notices.
-- The bar plugin, discovery and enablement.
-- Final checks for device access, a responding daemon with a working virtual keyboard, automatic startup, the enabled bar plugin and matching versions.
+Your typing and theme preferences are preserved. Existing installations made with
+Accent’s old installer are moved from the old user service to plugin-owned startup.
+The startup preference is retained. [Installation, migration and troubleshooting](docs/INSTALL.md).
 
-You do **not** need Rust or a separate bar-plugin installation. The installer
-preserves your preferences, backs up replaced files, and restores the previous
-user installation if a later step fails. It does not add you to the `input` group;
-the session-based device rules normally take effect immediately without a reboot.
-
-Run it as your desktop user, without `sudo`. It explains the changes before
-continuing; only package installation and device setup request administrator access.
-For a source build, use `./install.sh --from-source`; it also installs build dependencies.
-[Detailed installation, recovery and removal](docs/INSTALL.md).
-
-Already installed the bar plugin from the marketplace? Run the complete installer
-above to supply the runtime and permissions as well. A clean existing plugin is
-upgraded with a backup; local Git changes must be committed or stashed first.
-The marketplace’s **Manual Setup** label remains accurate: Omarchy’s plugin-add
-command deliberately does not run installers or grant keyboard-device access.
-Installing or enabling the widget never silently downloads code or requests privileges.
+Hyprland allows one input-method tool per seat. If Fcitx, IBus or another tool is
+already using that interface, Accent reports the conflict and leaves that tool in
+place. The standard installation target assumes no other active input method.
+The marketplace’s curated **Manual Setup** label can change only after its
+maintainers approve the updated listing; this release supplies the standard path.
 
 ## Use it
 
@@ -86,8 +73,8 @@ Installing or enabling the widget never silently downloads code or requests priv
 Changes save automatically. **Languages** filters available sets, **Appearance**
 chooses the theme and controls picker shape and transparency, and **About** shows
 provenance and privacy.
-Closing settings leaves the service running. `accent --settings` opens settings;
-`accent --daemon` starts quietly.
+Closing settings leaves Accent running. The bar owns startup and shutdown; no
+standalone service is needed.
 
 ## Themes
 
@@ -124,20 +111,22 @@ theme = "aurora-glass"
 # champagne-metal, graphite-gold, system
 ```
 
-Use the complete installer when upgrading so the bar plugin and background
-program stay on the same release. See [Update & remove](#update--remove).
+The runtime travels with the plugin, so a normal plugin update updates both.
+See [Update & remove](#update--remove).
 
 ## Permissions, privacy & limits
 
-The daemon reads keyboard devices and injects selected characters through uinput.
-Membership of `input` permits reading all keyboards: install only code you trust.
-The QML bar plugin manages only the **user** service and calls the settings CLI.
-It never requests privilege or edits unrelated desktop configuration.
+The daemon uses Hyprland’s input-method and virtual-keyboard interfaces. It can
+read and replace keyboard input within your desktop session, so install only code
+you trust. It does not open physical keyboard devices or request administrator
+access on this supported path. The widget runs in Omarchy’s unsandboxed shell.
 
-Typing is processed locally. Some characters use a clipboard fallback, which can
-replace clipboard content. Too many enabled language sets exceed the custom
-keymap capacity; overflow characters may not work in terminals. Start with only
-the languages you need. [Character sets](docs/CHARACTERS.md) · [Troubleshooting](docs/INSTALL.md#troubleshooting)
+Typing is processed locally, without accounts, analytics or keystroke logging.
+Selected Unicode characters use a private virtual-keyboard keymap, including
+characters from large language sets. This path does not use the clipboard or alter
+your keyboard layout. Fields identified by applications as passwords, PINs or
+sensitive input receive ordinary typing without the accent picker.
+[Character sets](docs/CHARACTERS.md) · [Troubleshooting](docs/INSTALL.md#troubleshooting)
 
 The supported listing target is **Omarchy Quattro on Linux x86_64 with Hyprland**.
 macOS and other Linux desktops have inherited support, but are not covered by the
@@ -149,46 +138,39 @@ application compatibility is made.
 **Is this a keyboard layout?** Accent adds a character picker to your typing workflow.
 Choose language sets in settings; you do not need to memorize compose sequences.
 
-**Does adding the plugin install everything?** There are two parts: the Omarchy bar
-plugin and the Accent daemon. Install the daemon once using the instructions above;
-the bar then provides settings and service controls.
+**Does adding the plugin install everything?** Yes. The matching runtime is included
+in the repository and starts when the plugin is enabled.
 
 **Can I pause it?** Right-click **Á** and pause the service. Start it again from the
 same menu. Opening settings also starts the daemon if it is paused.
 
-**Does it work in every app?** Compatibility depends on the application and character.
-Clipboard fallback and terminal limitations are described above.
+**Does it work in every app?** The new backend sends ordinary keyboard input to
+Wayland and XWayland applications, including terminals. Application-specific
+behaviour and conflicts with other input methods can still affect compatibility.
 
 ## Update & remove
 
-For an update, check out the new release in your original Accent clone and rerun
-`./install.sh`. It upgrades both the program and bar plugin, restarts the service,
-and checks the result. Running the same release again also repairs an incomplete
-installation. Your settings in `~/.config/accent/config.toml` are retained.
-
-Check an installation without changing it:
+Update the plugin and its bundled runtime together:
 
 ```bash
-./install.sh --check
+omarchy plugin update bjl.accent
 ```
 
-The command reports each readiness check and exits unsuccessfully if any is missing.
-Updating only the bar through `omarchy plugin update bjl.accent` does not update
-the native program; use the release installer for complete upgrades.
-
-To remove the user installation while keeping preferences:
+Pause from the bar menu, or disable the plugin:
 
 ```bash
-systemctl --user disable --now accent.service
+omarchy plugin disable bjl.accent
+```
+
+Remove it while retaining your preferences:
+
+```bash
 omarchy plugin remove bjl.accent
-rm -f ~/.local/bin/accent ~/.local/share/applications/accent.desktop
-rm -f ~/.config/systemd/user/accent.service
-systemctl --user daemon-reload
 ```
 
-See [complete removal](docs/INSTALL.md#removal) for icons, notices, backups and
-administrator-owned device rules. Existing input-group membership from older
-installations is preserved; do not remove it if another application needs it.
+Settings remain in `~/.config/accent/` (or `$XDG_CONFIG_HOME/accent/`). Old installer
+files and device rules are no longer used by the standard path; see
+[legacy cleanup](docs/INSTALL.md#legacy-cleanup) before removing shared permissions.
 
 ## Source, support & attribution
 

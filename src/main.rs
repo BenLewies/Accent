@@ -18,6 +18,8 @@ mod theme;
 #[cfg(target_os = "linux")]
 mod virtual_kb;
 #[cfg(target_os = "linux")]
+mod wayland_input;
+#[cfg(target_os = "linux")]
 mod x11_layout;
 #[cfg(target_os = "linux")]
 mod xkb_custom;
@@ -37,6 +39,8 @@ Usage: accent [OPTIONS]
 Options:
   -h, --help       Print this help
   -V, --version    Print version
+      --evdev      Use the legacy Linux device backend (requires device access)
+      --wayland-probe  Check compositor keyboard protocols without taking input
       --daemon     Start quietly in the background (used by the service)
       --settings   Open the Settings window of the running daemon (Linux)
       --quit       Stop the running daemon (Linux)
@@ -60,6 +64,14 @@ fn main() -> iced::Result {
     }
     if args.iter().any(|a| a == "--help" || a == "-h") {
         print!("{HELP}");
+        return Ok(());
+    }
+    #[cfg(target_os = "linux")]
+    if args.iter().any(|a| a == "--wayland-probe") {
+        if let Err(error) = wayland_input::probe() {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
         return Ok(());
     }
 
@@ -101,6 +113,8 @@ fn main() -> iced::Result {
 
     let config = config::load_config();
     mappings::init(&config.languages);
+    #[cfg(target_os = "linux")]
+    wayland_input::select(hyprland::is_running() && !args.iter().any(|a| a == "--evdev"));
 
     start_config_watcher();
 
@@ -108,6 +122,14 @@ fn main() -> iced::Result {
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let grab_rx = Arc::new(Mutex::new(Some(rx)));
+
+    #[cfg(target_os = "linux")]
+    if !demo_mode && wayland_input::selected() {
+        if let Err(error) = wayland_input::start(tx.clone(), &config) {
+            eprintln!("[Accent] Could not start Wayland input: {error}");
+            std::process::exit(1);
+        }
+    }
 
     #[cfg(target_os = "linux")]
     linux_setup();
@@ -121,6 +143,9 @@ fn main() -> iced::Result {
     // ACCENT_DEMO opens a window for inspection; a second instance must
     // not also take over the keyboard.
     if !demo_mode {
+        #[cfg(target_os = "linux")]
+        if !wayland_input::selected() { grab::run_grab_thread(tx, &config); }
+        #[cfg(not(target_os = "linux"))]
         grab::run_grab_thread(tx, &config);
     } else {
         drop(tx);
@@ -180,6 +205,8 @@ fn setup_direct_typing() {
     // the user's app. Runs on startup and on each config reload (this is the
     // reload callback), matching the kb_options lifecycle below.
     hyprland::ensure_overlay_no_focus();
+    // This backend has its own Unicode keymap; leave the desktop layout alone.
+    if wayland_input::selected() { return; }
     let all = mappings::all_variant_chars();
     let base_missing = xkb_map::chars_missing_from_base(&all);
     if !base_missing.is_empty() {

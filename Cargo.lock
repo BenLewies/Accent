@@ -20,7 +20,7 @@ checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 
 [[package]]
 name = "accent"
-version = "1.4.2"
+version = "1.5.0"
 dependencies = [
  "ashpd",
  "cocoa 0.26.1",
@@ -31,6 +31,7 @@ dependencies = [
  "env_logger",
  "evdev",
  "iced",
+ "libc",
  "log",
  "notify",
  "objc",
@@ -40,6 +41,8 @@ dependencies = [
  "tokio",
  "toml",
  "unicode_names2",
+ "wayland-client",
+ "wayland-protocols-misc",
  "x11rb",
  "xkbcommon",
  "zbus 5.19.0",

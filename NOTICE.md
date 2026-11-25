@@ -9,6 +9,7 @@ Copyright (c) 2026 BenLewies applies to the original Accent modifications.
 Those modifications are also made available under the MIT license.
 
 Changes include Linux long-press activation, automatic Omarchy palette matching,
-Accent branding, settings navigation/search, quiet service startup and bar controls.
+Accent branding, settings navigation/search, quiet service startup, bar controls,
+and the permission-free Hyprland input-method/virtual-keyboard integration.
 No endorsement by Victor Masson, Microsoft, Unicode, Omarchy, or the marketplace
 is implied. See THIRD_PARTY_NOTICES.md for third-party data and vendored code.

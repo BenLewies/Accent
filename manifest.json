@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "bjl.accent",
   "name": "Accent",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "author": "BenLewies",
   "license": "MIT",
   "description": "Type accents and symbols without breaking your flow. Hold a letter, choose a character, and keep typing on Omarchy.",

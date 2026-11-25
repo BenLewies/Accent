@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Backwards-compatible entry point for the complete Omarchy installer.
+# Compatibility entry point for the standard plugin installation.
 set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-exec python3 "$ROOT/dist/linux/install.py" "$@"
+exec bash "$ROOT/install.sh" "$@"

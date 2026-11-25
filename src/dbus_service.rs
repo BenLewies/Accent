@@ -13,7 +13,11 @@ impl Service {
     }
 
     fn input_ready(&self) -> bool {
-        crate::virtual_kb::is_ready()
+        crate::wayland_input::is_ready() || crate::virtual_kb::is_ready()
+    }
+
+    fn input_error(&self) -> String {
+        crate::wayland_input::error()
     }
 
     fn quit(&self) {

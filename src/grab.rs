@@ -26,7 +26,7 @@ pub fn set_live(input_time_ms: u64, hold_delay_ms: u64, activation_key: Activati
     };
 }
 
-fn apply_live(sm: &mut StateMachine) {
+pub(crate) fn apply_live(sm: &mut StateMachine) {
     let live = LIVE.lock().unwrap();
     sm.set_timing(live.input_time_ms, live.hold_delay_ms, live.activation_key);
 }
