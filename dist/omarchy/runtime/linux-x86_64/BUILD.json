@@ -1,6 +1,6 @@
 {
   "version": "1.5.0",
   "target": "x86_64-unknown-linux-gnu",
-  "source_sha256": "12cf8dceb3ce3c5ea4020b25126a510ebe73f95c3703e1fd7b8ad672d6bd1fbc",
-  "binary_sha256": "478bddac18b1c23c327d570bd1d1f684a559bcb8a0d2cf044707ec5e028f576e"
+  "source_sha256": "56c9977af07fde724ff2fa2d4d392e57cf2cb5d57f3edbe740352204a8af5e7d",
+  "binary_sha256": "439b2d7aab414337c1f10d387950bde108fcaf6b6802aa023e38cdb77557c9e8"
 }

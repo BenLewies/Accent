@@ -41,6 +41,8 @@ def main():
     parser.add_argument('--binary', type=Path)
     parser.add_argument('--notices', type=Path)
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--build-run')
+    parser.add_argument('--source-commit')
     args = parser.parse_args()
     if not args.check:
         if not args.binary or not args.notices:
@@ -52,6 +54,10 @@ def main():
         record = {'version': tomllib.loads((ROOT / 'Cargo.toml').read_text())['package']['version'],
                   'target': 'x86_64-unknown-linux-gnu', 'source_sha256': source_digest(),
                   'binary_sha256': hashlib.sha256((RUNTIME / 'accent').read_bytes()).hexdigest()}
+        if args.build_run:
+            record['build_run'] = args.build_run
+        if args.source_commit:
+            record['source_commit'] = args.source_commit
         (RUNTIME / 'BUILD.json').write_text(json.dumps(record, indent=2) + '\n')
     verify()
 

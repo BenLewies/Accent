@@ -391,23 +391,23 @@ fn start_config_watcher() {
             eprintln!("[Accent] Failed to watch config dir: {}", e);
             return;
         }
-        let mut last_reload = Instant::now() - Duration::from_secs(1);
         let debounce = Duration::from_millis(400);
-        for res in rx {
+        while let Ok(res) = rx.recv() {
             match res {
                 Ok(event) => {
-                    let relevant = event
-                        .paths
-                        .iter()
-                        .any(|p| p.file_name().map_or(false, |n| n == "config.toml"));
-                    if !relevant {
-                        continue;
+                    if !config_changed(&event) { continue; }
+                    // Coalesce writes at the trailing edge. Read/access events
+                    // must not re-trigger a reload, or our own read starves
+                    // subsequent edits and generates an endless reload loop.
+                    let mut deadline = Instant::now() + debounce;
+                    loop {
+                        match rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+                            Ok(Ok(event)) if config_changed(&event) => deadline = Instant::now() + debounce,
+                            Ok(_) => {},
+                            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => break,
+                            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => return,
+                        }
                     }
-                    let now = Instant::now();
-                    if now.duration_since(last_reload) < debounce {
-                        continue;
-                    }
-                    last_reload = now;
                     if let Some(cfg) = config::read_config() {
                         mappings::reload(&cfg.languages);
                         grab::set_live(
@@ -428,4 +428,28 @@ fn start_config_watcher() {
             }
         }
     });
+}
+
+fn config_changed(event: &notify::Event) -> bool {
+    (event.kind.is_create() || event.kind.is_modify() || event.kind.is_remove())
+        && event.paths.iter().any(|p| p.file_name().is_some_and(|n| n == "config.toml"))
+}
+
+#[cfg(test)]
+mod config_watch_tests {
+    use super::*;
+    #[test]
+    fn reading_config_does_not_trigger_another_reload() {
+        let event = notify::Event::new(notify::EventKind::Access(notify::event::AccessKind::Read))
+            .add_path("/example/config.toml".into());
+        assert!(!config_changed(&event));
+    }
+    #[test]
+    fn writes_and_atomic_replacements_trigger_reload() {
+        for kind in [notify::EventKind::Create(notify::event::CreateKind::File),
+            notify::EventKind::Modify(notify::event::ModifyKind::Data(notify::event::DataChange::Any))] {
+            assert!(config_changed(&notify::Event::new(kind).add_path("/example/config.toml".into())));
+            assert!(!config_changed(&notify::Event::new(kind).add_path("/example/bar.json".into())));
+        }
+    }
 }
