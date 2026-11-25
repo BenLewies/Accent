@@ -58,6 +58,20 @@ fn main() -> iced::Result {
 
     // Answer CLI flags before touching the config, display or input devices.
     let args: Vec<String> = std::env::args().skip(1).collect();
+    #[cfg(target_os = "linux")]
+    if args.iter().any(|a| a == "--plugin-owned") {
+        // QML unloading stops its Process, but the entire shell can also die
+        // before it cleans up children. Never retain its keyboard grab then.
+        // SAFETY: these process-control calls take integer constants only.
+        let parent = unsafe { libc::getppid() };
+        if unsafe { libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL) } != 0 {
+            eprintln!("[Accent] Could not attach runtime lifetime to the shell");
+            std::process::exit(1);
+        }
+        if unsafe { libc::getppid() } != parent || parent == 1 {
+            return Ok(());
+        }
+    }
     if args.iter().any(|a| a == "--version" || a == "-V") {
         println!("accent {}", env!("CARGO_PKG_VERSION"));
         return Ok(());

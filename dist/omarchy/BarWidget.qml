@@ -46,7 +46,7 @@ BarWidget {
     Component.onCompleted: root.request("initialize")
     Process {
         id: runtime
-        command: [decodeURIComponent(Qt.resolvedUrl("runtime/linux-x86_64/accent").toString().replace("file://", "")), "--daemon"]
+        command: [decodeURIComponent(Qt.resolvedUrl("runtime/linux-x86_64/accent").toString().replace("file://", "")), "--daemon", "--plugin-owned"]
         environment: ({ ICED_BACKEND: "tiny-skia" })
         onExited: function(code) {
             if (code !== 0) root.error = "Accent stopped unexpectedly; open controls to retry."
